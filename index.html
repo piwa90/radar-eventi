@@ -1,0 +1,1101 @@
+<style>
+  html, body { margin: 0; min-height: 100%; background: #0a0e27; }
+  .radar {
+    font-family: 'Courier New', Courier, monospace;
+    max-width: 480px; margin: 0 auto;
+    background: #0a0e27;
+    color: #e8e8e8;
+    padding: 1rem;
+    min-height: 100vh;
+    box-sizing: border-box;
+  }
+  .radar input, .radar select {
+    width: 100%; box-sizing: border-box;
+    background: #050818; color: #ffd60a;
+    border: 1px solid #ffd60a; border-radius: 4px;
+    padding: 8px; font-family: inherit; font-size: 14px;
+    -webkit-appearance: none; -moz-appearance: none; appearance: none;
+  }
+  .radar select {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' stroke='%23ffd60a' stroke-width='2' fill='none'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 30px;
+  }
+  .radar select option, .radar select optgroup {
+    background: #050818; color: #ffd60a;
+  }
+  .radar input::placeholder { color: #5a6a8a; }
+  .radar label { color: #8ab4ff; font-size: 12px; }
+  .radar-card {
+    border: 1px solid #1e2a4a; border-radius: 8px;
+    padding: 0.85rem 1rem; margin-bottom: 10px;
+    background: #0e1530;
+  }
+  .radar-card.notfound { border-style: dashed; opacity: 0.85; }
+  .radar-badge {
+    display: inline-block; font-size: 11px; padding: 2px 9px;
+    border-radius: 3px; font-weight: bold; letter-spacing: 0.3px;
+  }
+  .radar-tab {
+    flex: 1; text-align: center; padding: 8px; font-size: 12px;
+    cursor: pointer; border: 1px solid #1e2a4a; border-radius: 4px;
+    background: #0e1530; color: #8ab4ff;
+  }
+  .radar-tab.active { border-color: #ffd60a; background: #1a1440; color: #ffd60a; }
+  .radar-country-header {
+    color: #ffd60a; font-size: 13px; font-weight: bold;
+    margin: 18px 0 6px; padding-bottom: 4px;
+    border-bottom: 1px solid #1e2a4a;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .radar-confirm-bar {
+    display: flex; gap: 8px; margin-top: 8px;
+    background: #2a0e14; border: 1px solid #ff5d5d;
+    border-radius: 4px; padding: 8px; align-items: center;
+  }
+  .radar-btn {
+    background: #0e1530; color: #ffd60a; border: 1px solid #ffd60a;
+    border-radius: 4px; padding: 6px 12px; font-size: 12px;
+    font-family: inherit; cursor: pointer;
+  }
+  .radar-btn.danger { color: #ff5d5d; border-color: #ff5d5d; }
+  .radar a { color: #ffd60a; }
+  .radar-dropdown { position: relative; }
+  .radar-dropdown-btn {
+    width: 100%; box-sizing: border-box;
+    background: #050818; color: #ffd60a;
+    border: 1px solid #ffd60a; border-radius: 4px;
+    padding: 8px; font-family: inherit; font-size: 14px;
+    text-align: left; cursor: pointer;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .radar-dropdown-panel {
+    display: none;
+    position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+    background: #050818; border: 1px solid #ffd60a; border-radius: 4px;
+    max-height: 320px; overflow-y: auto; z-index: 50;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+  }
+  .radar-dropdown-panel.open { display: block; }
+  .radar-dropdown-group {
+    color: #8ab4ff; font-size: 11px; font-weight: bold;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    padding: 8px 10px 4px; border-top: 1px solid #1e2a4a;
+  }
+  .radar-dropdown-group:first-child { border-top: none; }
+  .radar-dropdown-item {
+    padding: 8px 14px; font-size: 14px; color: #e8e8e8; cursor: pointer;
+  }
+  .radar-dropdown-item:hover, .radar-dropdown-item.selected {
+    background: #1a1440; color: #ffd60a;
+  }
+  .radar-dropdown-item.all {
+    color: #ffd60a; font-weight: bold; border-bottom: 1px solid #1e2a4a;
+  }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<div class="radar">
+  <h2 class="sr-only">Radar Eventi</h2>
+  <p id="sync-status" style="font-size:11px; color:#5a6a8a; margin:-4px 0 10px;"></p>
+
+  <div style="display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap;">
+    <div id="tab-view" class="radar-tab active" onclick="switchTab('view')">&gt; sfoglia</div>
+    <div id="tab-fest" class="radar-tab" onclick="switchTab('fest')">&gt; festival</div>
+    <div id="tab-cn" class="radar-tab" onclick="switchTab('cn')">&gt; cina</div>
+    <div id="tab-add" class="radar-tab" onclick="switchTab('add')">&gt; aggiungi</div>
+    <div id="tab-nf" class="radar-tab" onclick="switchTab('nf')">&gt; non trovati</div>
+  </div>
+
+  <div id="view-panel">
+    <div class="radar-dropdown" style="margin-bottom:8px;">
+      <div id="city-filter-btn" class="radar-dropdown-btn" onclick="toggleCityDropdown()">
+        <span id="city-filter-label">-- tutte le città --</span>
+        <span>▾</span>
+      </div>
+      <div id="city-filter-panel" class="radar-dropdown-panel"></div>
+    </div>
+    <label style="display:flex; align-items:center; gap:6px; margin-bottom:12px;">
+      <input type="checkbox" id="tour-only" style="width:auto;" onchange="renderList()"> mostra solo i tour da controllare
+    </label>
+    <div id="list"></div>
+  </div>
+
+  <div id="fest-panel" style="display:none;">
+    <p style="font-size:12px; color:#8ab4ff; margin-bottom:14px;">// tutti i festival della lista, raggruppati per paese. sono visibili anche nella scheda "sfoglia" sotto la rispettiva città.</p>
+    <div id="fest-list"></div>
+  </div>
+
+  <div id="cn-panel" style="display:none;">
+    <p style="font-size:12px; color:#8ab4ff; margin-bottom:14px;">// articoli sulla scena underground cinese. manda un link e lo aggiungo qui.</p>
+    <div id="cn-list"></div>
+  </div>
+
+  <div id="add-panel" style="display:none;">
+    <label>nome</label>
+    <input id="f-name" placeholder="es. Poing Club" style="margin-bottom:10px;">
+
+    <label>città</label>
+    <input id="f-city" placeholder="es. Rotterdam" style="margin-bottom:10px;">
+
+    <label>paese</label>
+    <input id="f-country" placeholder="es. Olanda" style="margin-bottom:10px;">
+
+    <label>tipo</label>
+    <select id="f-type" style="margin-bottom:10px;">
+      <option value="Musica">Musica</option>
+      <option value="Arte">Arte</option>
+      <option value="Digital art">Digital art</option>
+      <option value="Misto">Misto</option>
+      <option value="Tour artista">Tour artista</option>
+    </select>
+
+    <label>link instagram</label>
+    <input id="f-link" placeholder="https://www.instagram.com/..." style="margin-bottom:10px;">
+
+    <label>cosa organizza (breve)</label>
+    <input id="f-note" placeholder="es. festival annuale, serate club" style="margin-bottom:10px;">
+
+    <label>confidenza</label>
+    <select id="f-conf" style="margin-bottom:10px;">
+      <option value="Certain">Certain</option>
+      <option value="Likely">Likely</option>
+      <option value="Guessing">Guessing</option>
+    </select>
+
+    <div id="f-error" style="font-size:13px; color:#ff5d5d; display:none; margin-bottom:8px;"></div>
+    <button class="radar-btn" onclick="addProfile()">&gt; salva profilo</button>
+  </div>
+
+  <div id="nf-panel" style="display:none;">
+    <p style="font-size:12px; color:#8ab4ff; margin-bottom:14px;">// locali/festival cercati ma non ancora verificati con certezza. nessun link diretto disponibile.</p>
+    <div id="nf-list"></div>
+  </div>
+</div>
+
+<script>
+let profiles = [];
+let confirmDeleteIdx = null;
+let selectedCity = '__all__';
+let editingIdx = null;
+let longPressTimer = null;
+let suppressNextClick = false;
+
+// ==== CONFIGURAZIONE SYNC REMOTA ====
+// Incolla qui l'URL "Pubblica sul web" (formato CSV) del tuo Google Sheet.
+// Istruzioni: File > Condividi > Pubblica sul web > scegli il foglio > formato "Valori separati da virgola (.csv)"
+// Lascialo vuoto per usare solo i dati salvati dentro questo file.
+const REMOTE_DATA_URL = 'https://docs.google.com/spreadsheets/d/1a5LoIJ117JInx5qxyDgZbUY2PUA2Q8bK5TPuZYPXeSE/gviz/tq?tqx=out:csv&gid=0';
+
+// Compatibilita storage: usa window.storage se disponibile (dentro Claude.ai),
+// altrimenti localStorage (quando il file e aperto come .html scaricato sul telefono/PC).
+const storage = (typeof window !== 'undefined' && window.storage) ? window.storage : {
+  get: async (key) => {
+    const v = localStorage.getItem('radar_' + key);
+    return v !== null ? { value: v } : null;
+  },
+  set: async (key, value) => {
+    localStorage.setItem('radar_' + key, value);
+    return { value };
+  }
+};
+
+const confColors = {
+  Certain: { bg: '#0d2b1a', text: '#4ade80' },
+  Likely: { bg: '#332405', text: '#ffd60a' },
+  Guessing: { bg: '#2a0e14', text: '#ff5d5d' }
+};
+const typeColors = {
+  'Musica': { bg: '#0d1f3d', text: '#8ab4ff' },
+  'Arte': { bg: '#2a1445', text: '#c9a3ff' },
+  'Digital art': { bg: '#2a1445', text: '#c9a3ff' },
+  'Misto': { bg: '#1e1e1e', text: '#a0a0a0' },
+  'Tour artista': { bg: '#2a0e14', text: '#ff5d5d' }
+};
+
+const cityCountry = {
+  'Buenos Aires': 'Argentina',
+  'Rotterdam': 'Olanda', 'Amsterdam': 'Olanda', 'LAia (Olanda)': 'Olanda',
+  'Bruxelles': 'Belgio',
+  'Copenhagen': 'Danimarca',
+  'Helsinki': 'Finlandia',
+  'Parigi': 'Francia', 'Marsiglia': 'Francia', 'Lione': 'Francia', 'Nantes': 'Francia', 'Lille': 'Francia',
+  'Amburgo': 'Germania', 'Berlino': 'Germania', 'Francoforte': 'Germania', 'Hildesheim (Germania)': 'Germania',
+  'Atene': 'Grecia',
+  'Bologna': 'Italia', 'Firenze': 'Italia', 'Genova': 'Italia', 'Milano': 'Italia', 'Padova': 'Italia', 'Roma': 'Italia', 'Verona': 'Italia', 'Ancona': 'Italia', 'Foligno': 'Italia',
+  'Riga': 'Lettonia',
+  'Vilnius': 'Lituania',
+  'Oslo': 'Norvegia',
+  'Wroclaw': 'Polonia', 'Bialystok': 'Polonia', 'Cracovia': 'Polonia',
+  'Lisbona': 'Portogallo', 'Barreiro': 'Portogallo', 'Porto': 'Portogallo',
+  'Barcellona': 'Spagna', 'Barcellona (Hospitalet)': 'Spagna', 'Madrid': 'Spagna', 'Valencia': 'Spagna', 'Tenerife': 'Spagna', 'Toledo (Spagna)': 'Spagna',
+  'Göteborg': 'Svezia', 'Stoccolma': 'Svezia', 'Malmö': 'Svezia',
+  'Budapest': 'Ungheria', 'Mátra (Ungheria)': 'Ungheria',
+  'Seul': 'Corea del Sud',
+  'Osaka': 'Giappone', 'Tokyo': 'Giappone',
+  'Kathmandu': 'Nepal',
+  'Hanoi': 'Vietnam',
+  'San Paolo': 'Brasile',
+  'Bogotá': 'Colombia',
+  'Città del Messico': 'Messico',
+  'Bali (Canggu)': 'Indonesia',
+  'Praga': 'Repubblica Ceca', 'Hrádek nad Nisou': 'Repubblica Ceca',
+  'Marrakech': 'Marocco',
+  'Lipsia': 'Germania',
+  'Bratislava': 'Slovacchia',
+  'Dhermi (Albania)': 'Albania',
+  'Graz': 'Austria',
+  'Birmingham': 'Regno Unito', 'Manchester': 'Regno Unito', 'Londra': 'Regno Unito', 'Bristol': 'Regno Unito', 'Liverpool': 'Regno Unito', 'Brighton': 'Regno Unito', 'Brecons Beacons': 'Regno Unito',
+  'Bilbao': 'Spagna', 'Palma di Maiorca': 'Spagna', 'Sabadell': 'Spagna', 'La Coruña': 'Spagna', 'León': 'Spagna',
+  'San José': 'Costa Rica',
+  'Santiago del Cile': 'Cile',
+  'Rio de Janeiro': 'Brasile', 'Natal': 'Brasile',
+  'Caldas da Rainha': 'Portogallo', 'Paredes de Coura': 'Portogallo',
+  'Spalato': 'Croazia',
+  'Rennes': 'Francia', 'Bordeaux': 'Francia', 'Caen': 'Francia', 'Bourlon': 'Francia', 'Tolosa': 'Francia',
+  'Hilvarenbeek': 'Olanda',
+  'Aalborg': 'Danimarca',
+  'L\'Aquila': 'Italia',
+  'Zurigo': 'Svizzera', 'Winterthur': 'Svizzera', 'Liestal': 'Svizzera', 'Ginevra': 'Svizzera',
+  'Gent': 'Belgio',
+  'Lussemburgo': 'Lussemburgo',
+  'Münster': 'Germania', 'Flensburg': 'Germania',
+  'Erevan': 'Armenia',
+  'Tbilisi': 'Georgia',
+  'Innsbruck': 'Austria', 'Vienna': 'Austria', 'Scheibbs': 'Austria',
+  'Anversa': 'Belgio',
+  'Montréal': 'Canada',
+  'Pechino': 'Cina', 'Shanghai': 'Cina', 'Shenzhen': 'Cina',
+  'Hong Kong': 'Hong Kong',
+  'Medellín': 'Colombia',
+  'Zagabria': 'Croazia',
+  'Aarhus': 'Danimarca',
+  'Lione': 'Francia', 'Reims': 'Francia', 'Saint-Ouen (Parigi)': 'Francia', 'Strasburgo': 'Francia',
+  'Bayreuth': 'Germania', 'Bochum': 'Germania', 'Colonia': 'Germania', 'Dortmund': 'Germania', 'Essen': 'Germania', 'Hannover': 'Germania', 'Neumarkt': 'Germania', 'Wuppertal': 'Germania',
+  'Fukuoka': 'Giappone', 'Hiroshima': 'Giappone',
+  'Venezia': 'Italia',
+  'Mazunte': 'Messico',
+  'Bergen': 'Norvegia', 'Tromsø': 'Norvegia',
+  'Enschede': 'Olanda', 'Groningen': 'Olanda',
+  'Gijón': 'Spagna', 'Santiago de Compostela': 'Spagna',
+  'Norberg': 'Svezia',
+  'Basilea': 'Svizzera', 'Berna': 'Svizzera',
+  'Tour da verificare': '__tour__'
+};
+function countryOf(city) { return cityCountry[city] || 'Altro'; }
+function isFestival(p) {
+  return /festival/i.test(p.name) || /festival/i.test(p.note || '');
+}
+
+const notFoundList = [
+  { name: 'Rote Flora', city: 'Amburgo', country: 'Germania', note: 'Centro sociale occupato, nessun profilo IG ufficiale verificabile' },
+  { name: 'Plattenvereinigung', city: 'Berlino', country: 'Germania', note: 'Nessun account IG chiaro trovato' },
+  { name: 'Kulturhaus Kili', city: 'Berlino', country: 'Germania', note: 'Trovato solo il profilo della sede di Marburg (chiusa), non quella di Berlino' },
+  { name: 'Ø Marked og Club', city: 'Oslo', country: 'Norvegia', note: 'Nessun profilo IG chiaro trovato' },
+  { name: 'Storgata 26', city: 'Oslo', country: 'Norvegia', note: 'Chiuso definitivamente per bancarotta, luglio 2025' },
+  { name: 'Ostara Bar', city: 'Oslo', country: 'Norvegia', note: 'Chiuso definitivamente (confermato dal sito ufficiale)' },
+  { name: 'Cafè Bar 18', city: 'Barcellona', country: 'Spagna', note: 'Nessun profilo IG univoco trovato' },
+  { name: '45/33', city: 'Barcellona', country: 'Spagna', note: 'Non trovato' },
+  { name: 'Viruss Barcelona', city: 'Barcellona', country: 'Spagna', note: 'Non trovato' },
+  { name: 'O V E R T O N E', city: 'Barcellona', country: 'Spagna', note: 'Organizzatore eventi, non trovato' },
+  { name: 'LUV Bar & Events', city: 'Barcellona', country: 'Spagna', note: 'Non trovato' },
+  { name: 'The Garage of the Bass Valley', city: 'Barcellona', country: 'Spagna', note: 'Non trovato' },
+  { name: 'Unlocked_bcn', city: 'Barcellona', country: 'Spagna', note: 'Non trovato' },
+  { name: 'Casa dels Contes', city: 'Barcellona', country: 'Spagna', note: 'Non trovato' },
+  { name: 'La Deskomunal', city: 'Barcellona', country: 'Spagna', note: 'Non trovato' },
+  { name: 'Valkiria IFF', city: 'Barcellona', country: 'Spagna', note: 'Non trovato' },
+  { name: 'Copelia', city: 'Madrid', country: 'Spagna', note: 'Segnalato "closed?" nella lista originale' },
+  { name: 'Arena', city: 'Madrid', country: 'Spagna', note: 'Segnalato "closed?" nella lista originale' },
+  { name: 'One', city: 'Madrid', country: 'Spagna', note: 'Segnalato "closed?" nella lista originale' },
+  { name: 'Oasis Club', city: 'Madrid', country: 'Spagna', note: 'Troppi omonimi, nessun match certo' },
+  { name: 'Soma Underground Exp', city: 'Madrid', country: 'Spagna', note: 'Non trovato' },
+  { name: 'The Void Session', city: 'Madrid', country: 'Spagna', note: 'Non trovato' },
+  { name: 'Metro', city: 'Alicante', country: 'Spagna', note: 'Segnalato "closed?" nella lista originale' },
+  { name: 'Zeus', city: 'Coruña', country: 'Spagna', note: 'Nessuna traccia online, probabilmente chiuso' },
+  { name: 'Nofun Fest', city: 'Valencia', country: 'Spagna', note: 'Non trovato' },
+  { name: 'Secret Room', city: 'Budapest', country: 'Ungheria', note: 'Nessun profilo IG chiaro' },
+  { name: 'Inota Festival', city: '—', country: 'Ungheria', note: 'Non ancora cercato' },
+  { name: 'Klub Kalabalik', city: 'Alvesta', country: 'Svezia', note: 'Non trovato' },
+  { name: 'Bar Brooklyn & Calexyco', city: 'Stoccolma', country: 'Svezia', note: 'Non trovato' },
+  { name: 'Bodyfest', city: 'Stoccolma', country: 'Svezia', note: 'Festival itinerante, nessun IG ufficiale univoco identificato con certezza' },
+  { name: 'The Circle (juke)', city: '—', country: 'Hong Kong', note: 'Non trovato' },
+  { name: 'Rumor', city: 'Cevo', country: 'Italia', note: 'Cercato ma nessun profilo IG chiaro trovato' },
+  { name: 'Locale TBC (Dame Area tour)', city: 'San Paolo', country: 'Brasile', note: 'Locus da confermare, nessun nome/IG ancora disponibile' },
+  { name: 'Lugar secreto (Dame Area tour)', city: 'León', country: 'Spagna', note: 'Location segreta, IG non disponibile' },
+  { name: 'Hafenklang (handle alternativo)', city: 'Amburgo', country: 'Germania', note: 'Segnalato con handle @hafenklang_official, diverso da quello gia in lista (@hafenklanghamburg): verificare quale sia attivo' },
+  { name: 'Panke (handle alternativo)', city: 'Berlino', country: 'Germania', note: 'Segnalato con handle @panke_berlin, diverso da quello gia in lista (@pankeculture): verificare quale sia attivo' },
+  { name: 'Bye Bye Disco', city: 'Pechino', country: 'Cina', note: 'Club/crew disco reale (Time Out Beijing, RA), ma handle IG fornito (@byebyediscobeijing) non esiste: nessun profilo verificato trovato' },
+  { name: 'Predator', city: 'Fukuoka', country: 'Giappone', note: 'Nessun profilo IG chiaro trovato, possibile crew/collettivo senza account proprio' },
+  { name: 'Club Ondo', city: 'Hiroshima', country: 'Giappone', note: 'Handle fornito (@ongakushokudo_ondo) non verificato con certezza' },
+  { name: 'MusikZentrum Hannover', city: 'Hannover', country: 'Germania', note: 'Handle non verificato con certezza (esistono varianti @musikzentrum_hannover e @musikzentrumhannover)' },
+  { name: 'Sonic Territories', city: 'Vienna', country: 'Austria', note: 'Handle non verificato con certezza (esistono varianti @sonicterritories e @sonic_territories)' },
+  { name: 'Cincuentacincuenta', city: 'Medellín', country: 'Colombia', note: 'Handle non verificato con certezza (esistono varianti con diverso numero di ripetizioni della parola)' },
+  { name: 'Entreposto', city: 'San Paolo', country: 'Brasile', note: 'Ambiguita: il profilo IG trovato sembra dedicato a un brand di decor/tessuti, non chiaramente al locale musicale' },
+  { name: 'Ikse Ikse', city: 'Marsiglia', country: 'Francia', note: 'Handle @ikse_ikse trovato ma sembra un brand di pannelli acustici, non il collettivo musicale: verificare' },
+  { name: 'Aurora Festival', city: 'Natal', country: 'Brasile', note: 'Troppi festival omonimi nel mondo, nessun handle confermabile con certezza per quello di Natal' },
+  { name: '6*Festival', city: 'Bayreuth', country: 'Germania', note: 'Nessun profilo IG chiaro trovato con questo nome a Bayreuth' },
+  { name: 'In.Out.Sider Festival', city: 'Bruxelles', country: 'Belgio', note: 'Nome corretto probabilmente "In.Out.Sider" (non "In.Outsider"), sembra legato anche a Parigi/Centre Wallonie-Bruxelles: nessun handle IG confermato con certezza' },
+  { name: 'Scopitone Festival', city: 'Nantes', country: 'Francia', note: 'Trovato solo un account inattivo dal 2013 (@scopitone, 197 follower): handle attuale non confermato con certezza' }
+];
+
+const chinaArticles = [
+  { title: "Tech by Day, DJ by Night: Shenzhen's Creative Underground", url: 'https://jingdaily.com/posts/tech-by-day-dj-by-night-shenzhen-s-creative-underground', source: 'Jing Daily', note: 'Scena underground di Shenzhen: professionisti tech che di notte fanno DJ set, spazi e collettivi emergenti' }
+];
+
+const seedProfiles = [
+  { name: 'Artlab', city: 'Buenos Aires', type: 'Digital art', link: 'https://www.instagram.com/artlabpro', note: 'Laboratorio arte e tecnologia, legato a MUTEK AR e Supernova x Artlab (Ibiza)', conf: 'Certain' },
+  { name: 'Poing Club', city: 'Rotterdam', type: 'Musica', link: 'https://www.instagram.com/poing_club', note: 'Collettivo club, organizza Poing Festival e serate all Export', conf: 'Certain' },
+  { name: 'LaVallee', city: 'Bruxelles', type: 'Arte', link: 'https://www.instagram.com/lavallee_bxl', note: 'Studi arte, spazi espositivi ed eventi multidisciplinari', conf: 'Certain' },
+  { name: 'Galathea Kroen', city: 'Copenhagen', type: 'Musica', link: 'https://www.instagram.com/galatheakroen_', note: 'Storico locale jazz, jam session', conf: 'Certain' },
+  { name: 'La Fontaine', city: 'Copenhagen', type: 'Musica', link: 'https://www.instagram.com/lafontainecph', note: 'Il jazz bar piu antico di Copenhagen, jam session ven-dom', conf: 'Certain' },
+  { name: 'Baggen', city: 'Copenhagen', type: 'Musica', link: 'https://www.instagram.com/baggenkbh', note: 'Bar club queer-friendly nel Meatpacking District', conf: 'Certain' },
+  { name: 'Pumpehuset', city: 'Copenhagen', type: 'Musica', link: 'https://www.instagram.com/pumpehuset', note: 'Sala concerti su due piani nel centro citta', conf: 'Certain' },
+  { name: 'Alice', city: 'Copenhagen', type: 'Musica', link: 'https://www.instagram.com/alice_nbro', note: 'Venue per musica avventurosa: world, jazz, elettronica, avant-garde', conf: 'Certain' },
+  { name: 'Lygtens Kro', city: 'Copenhagen', type: 'Misto', link: 'https://www.instagram.com/lygtenskro', note: 'Locale con concerti intimi, cibo e birra', conf: 'Certain' },
+  { name: 'Katatonic Silentio', city: 'Tour da verificare', type: 'Tour artista', link: 'https://www.instagram.com/katatonic_silentio', note: 'Producer/DJ italiana, elettronica sperimentale (Delsin, Ilian Tape)', conf: 'Certain' },
+  { name: 'Zoe Mcpherson', city: 'Tour da verificare', type: 'Tour artista', link: 'https://www.instagram.com/zoemcphers', note: 'Artista multimediale franco-irlandese, base Berlino, fondatrice SFX', conf: 'Certain' },
+  { name: 'Sangre de Muerdago', city: 'Tour da verificare', type: 'Tour artista', link: 'https://www.instagram.com/sangredemuerdago', note: 'Folk galiziano, attivi dal 2007', conf: 'Certain' },
+  { name: 'Dame Area', city: 'Tour da verificare', type: 'Tour artista', link: 'https://www.instagram.com/dame_area_', note: 'Duo Barcellona, dark electro/EBM', conf: 'Certain' },
+  { name: 'Wost', city: 'Tour da verificare', type: 'Tour artista', link: 'https://www.instagram.com/wostmusic', note: 'DJ/producer venezuelano, base Bogota, club music latino/tribal', conf: 'Certain' },
+  { name: "L'Appel du Vide", city: 'Helsinki', type: 'Musica', link: 'https://www.instagram.com/lappelduvidefest', note: 'Festival annuale a KULT: minimal wave, EBM, synth-punk, dark italo', conf: 'Certain' },
+  { name: 'Petit Bain', city: 'Parigi', type: 'Musica', link: 'https://www.instagram.com/petitbain', note: 'Sala concerti/club galleggiante sulla Senna, ~250 concerti/anno', conf: 'Certain' },
+  { name: 'Leda Atomica', city: 'Marsiglia', type: 'Misto', link: 'https://www.instagram.com/ledaatomicamusique', note: 'Sala concerti indipendente, punk/rock/elettronica', conf: 'Certain' },
+  { name: 'Soma', city: 'Marsiglia', type: 'Arte', link: 'https://www.instagram.com/soma.marseille', note: 'Spazio arte ibrido, Cours Julien', conf: 'Certain' },
+  { name: 'Les 9 Salopards', city: 'Marsiglia', type: 'Misto', link: 'https://www.instagram.com/les9salopards', note: 'Centro culturale multidisciplinare: concerti, mostre, dischi', conf: 'Certain' },
+  { name: "L'Estaminet Matinal", city: 'Marsiglia', type: 'Musica', link: 'https://www.instagram.com/lestaminetmatinal', note: 'Bar club elettronica, Notre Dame du Mont', conf: 'Certain' },
+  { name: 'Le Chapiteau', city: 'Marsiglia', type: 'Misto', link: 'https://www.instagram.com/le_chapiteau_marseille', note: 'Lieu open-air, bar bio/club/ristorante, Belle de Mai', conf: 'Certain' },
+  { name: 'La Makeda', city: 'Marsiglia', type: 'Musica', link: 'https://www.instagram.com/lemakeda13', note: 'Sala concerti, gestita da due donne, ~200 concerti/anno', conf: 'Certain' },
+  { name: 'Habitat Festival', city: 'Amburgo', type: 'Musica', link: 'https://www.instagram.com/habitatfestival', note: '32 ore di rave nonstop, tecno/house, luglio a MS Artville', conf: 'Certain' },
+  { name: 'Kampnagel', city: 'Amburgo', type: 'Arte', link: 'https://www.instagram.com/kampnagel_hamburg', note: 'Il piu grande centro indipendente per arti performative in Germania', conf: 'Certain' },
+  { name: 'Hafenklang', city: 'Amburgo', type: 'Musica', link: 'https://www.instagram.com/hafenklanghamburg', note: 'Sala concerti storica, indie/rock/punk, dal 1996', conf: 'Certain' },
+  { name: 'Frappant', city: 'Amburgo', type: 'Arte', link: 'https://www.instagram.com/frappantgalerie', note: 'Centro arte e cultura in ex caserma, mostre e concerti', conf: 'Certain' },
+  { name: 'Frau Holle', city: 'Amburgo', type: 'Musica', link: 'https://www.instagram.com/club.frauholle', note: 'Club techno/house a St. Pauli (esistono due profili simili, verificare)', conf: 'Likely' },
+  { name: 'Kir', city: 'Amburgo', type: 'Musica', link: 'https://www.instagram.com/kirhamburg', note: 'Club goth/industrial/darkwave/post-punk ad Altona', conf: 'Certain' },
+  { name: 'Savage Club', city: 'Amburgo', type: 'Musica', link: 'https://www.instagram.com/savage_hamburg', note: 'Serate club/live music, handle confermato via ricerca (24K follower)', conf: 'Certain' },
+  { name: 'Centro Sociale', city: 'Amburgo', type: 'Misto', link: 'https://www.instagram.com/centrosocialehamburg', note: 'Centro sociale di sinistra nello Schanzenviertel, cultura e politica', conf: 'Certain' },
+  { name: 'Dub Cafe', city: 'Amburgo', type: 'Musica', link: 'https://dubcafehamburg.wordpress.com/', note: 'Serata dub mensile dentro la Rote Flora, nessun IG ufficiale trovato', conf: 'Guessing' },
+  { name: 'Panke', city: 'Berlino', type: 'Misto', link: 'https://www.instagram.com/pankeculture', note: 'Cafe/bar/club/spazio arte a Wedding, musica sperimentale', conf: 'Certain' },
+  { name: 'Codex', city: 'Berlino', type: 'Arte', link: 'https://www.instagram.com/codexberlin', note: 'Collettivo artistico, eventi/musica avant-garde', conf: 'Certain' },
+  { name: 'Renate', city: 'Berlino', type: 'Musica', link: 'https://www.instagram.com/renate.berlin', note: 'Storico club techno a Friedrichshain (rischio chiusura poi riaperto 2026, verificare stato attuale)', conf: 'Likely' },
+  { name: 'Slaughterhouse', city: 'Berlino', type: 'Musica', link: 'https://www.instagram.com/slaughterhouse_berlin', note: 'Sala concerti indie/punk/metal/gothic dal 1991, Kulturfabrik Moabit', conf: 'Certain' },
+  { name: 'Reef', city: 'Berlino', type: 'Musica', link: 'https://www.instagram.com/reef_berlin', note: 'Serie di serate bass/UK music, spesso al Berghain', conf: 'Certain' },
+  { name: 'Loophole', city: 'Berlino', type: 'Misto', link: 'https://www.instagram.com/loophole_brln', note: 'Storico spazio DIY arte/musica a Neukolln, sfrattato nel 2024, ora opera "in esilio" con eventi itineranti', conf: 'Certain' },
+  { name: 'Ono2', city: 'Francoforte', type: 'Misto', link: 'https://www.instagram.com/ono2_frankfurt', note: 'Spazio arte/concerti/musica, eventi privati', conf: 'Certain' },
+  { name: 'Death Disco', city: 'Atene', type: 'Musica', link: 'https://www.instagram.com/deathdisco_', note: 'Club new wave/post-punk/goth/EBM, anche festival open air collegato', conf: 'Certain' },
+  { name: 'Chaos Festival', city: 'Atene', type: 'Musica', link: 'https://www.instagram.com/chaosfestival', note: 'Festival techno/elettronica (nome ambiguo, esiste anche chaos.festival)', conf: 'Likely' },
+  { name: 'Spiti', city: 'Atene', type: 'Musica', link: 'https://www.instagram.com/spitiartbar', note: 'Spiti Art Bar a Keramikos (match incerto col nome nella lista originale)', conf: 'Likely' },
+  { name: 'Covo Club', city: 'Bologna', type: 'Musica', link: 'https://www.instagram.com/covoclub', note: 'Storico club rock/indie dal 1980', conf: 'Certain' },
+  { name: 'Tpo', city: 'Bologna', type: 'Misto', link: 'https://www.instagram.com/tpo_bologna', note: 'Municipio sociale, arte/cultura/politica dal 1995', conf: 'Certain' },
+  { name: 'Freakout Club', city: 'Bologna', type: 'Musica', link: 'https://www.instagram.com/freakout_club', note: 'Live underground dal 2012, no cover band', conf: 'Certain' },
+  { name: 'Tank Serbatoio', city: 'Bologna', type: 'Musica', link: 'https://www.instagram.com/tank_serbatoioculturale', note: 'Circolo Arci, concerti anche darkwave/post-punk', conf: 'Certain' },
+  { name: 'Manifattura Tabacchi', city: 'Firenze', type: 'Arte', link: 'https://www.instagram.com/manifatturatabacchifi', note: 'Quartiere contemporaneo con eventi arte/musica/cultura', conf: 'Certain' },
+  { name: 'Bonfim', city: 'Genova', type: 'Musica', link: 'https://www.instagram.com/bonfimclub', note: 'Club musica elettronica a Nervi (attenzione: licenza ritirata nel 2024, verificare se riaperto)', conf: 'Likely' },
+  { name: 'Combo', city: 'Milano', type: 'Misto', link: 'https://www.instagram.com/thisiscombo', note: 'Ostello/bar/spazio arte sui Navigli, anche a Venezia/Torino/Bologna', conf: 'Certain' },
+  { name: 'Circolo Nadir', city: 'Padova', type: 'Musica', link: 'https://www.instagram.com/circolonadir', note: 'Circolo Arci, concerti anche post-punk/synth', conf: 'Certain' },
+  { name: 'Klang', city: 'Roma', type: 'Musica', link: 'https://www.instagram.com/klangroma', note: 'Pigneto, elettronica/noise/jazz sperimentale/psichedelia', conf: 'Certain' },
+  { name: 'Fotonica Festival', city: 'Roma', type: 'Digital art', link: 'https://www.instagram.com/fotonicafestival', note: 'Festival annuale audio-visual digital arts', conf: 'Certain' },
+  { name: 'Rome Psych Fest', city: 'Roma', type: 'Musica', link: 'https://www.instagram.com/monkroma', note: 'Festival psichedelico ospitato al MONK Roma (uso IG del club)', conf: 'Likely' },
+  { name: 'Amen_nite', city: 'Roma', type: 'Musica', link: 'https://www.instagram.com/amen_nite', note: 'Promoter serate rave/club', conf: 'Certain' },
+  { name: 'Deposito', city: 'Verona', type: 'Misto', link: 'https://www.instagram.com/deposito.verona', note: 'Bar vintage con musica dal vivo, via XX Settembre', conf: 'Certain' },
+  { name: 'Veniceberg', city: 'Verona', type: 'Musica', link: 'https://www.instagram.com/veniceberg_official', note: 'Club privato dal 2012, musica elettronica', conf: 'Certain' },
+  { name: 'Depo', city: 'Riga', type: 'Musica', link: 'https://www.instagram.com/klubsdepo', note: 'Club underground/alternativo dal 2002, indie/industrial/metal/punk', conf: 'Certain' },
+  { name: 'Laska V21', city: 'Riga', type: 'Musica', link: 'https://www.instagram.com/laska.v21', note: 'Concerti e bar, atmosfera industrial, darkwave/post-punk/EBM', conf: 'Certain' },
+  { name: 'Kanepes Kulturas Centrs', city: 'Riga', type: 'Misto', link: 'https://www.instagram.com/kanepeskc', note: 'Centro culturale e bar, mostre e arte sperimentale', conf: 'Certain' },
+  { name: 'Post Club', city: 'Vilnius', type: 'Musica', link: 'https://www.instagram.com/postclubvilnius', note: 'Nuovo club, musica elettronica', conf: 'Certain' },
+  { name: 'BLÅ', city: 'Oslo', type: 'Musica', link: 'https://www.instagram.com/blaaoslo', note: 'Storico club jazz/hip-hop/concerti, il piu grande di Scandinavia', conf: 'Certain' },
+  { name: 'The Villa', city: 'Oslo', type: 'Musica', link: 'https://www.instagram.com/thevillaoslo', note: 'Club elettronica underground dal 2007, techno/house/drum n bass', conf: 'Certain' },
+  { name: 'Jaeger', city: 'Oslo', type: 'Musica', link: 'https://www.instagram.com/jaegeroslo', note: 'Club intimo, house/techno/disco', conf: 'Certain' },
+  { name: 'Revolver', city: 'Oslo', type: 'Musica', link: 'https://www.instagram.com/revolveroslo', note: 'Bar/club rock indie, concerti in cantina', conf: 'Certain' },
+  { name: 'Sentralen', city: 'Oslo', type: 'Misto', link: 'https://www.instagram.com/sentralenoslo', note: 'Ex banca, ora hub eventi/cultura/musica in centro', conf: 'Certain' },
+  { name: 'SALT Art & Music', city: 'Oslo', type: 'Arte', link: 'https://www.instagram.com/saltartmusic', note: 'Hub arte/musica/sauna sul lungomare', conf: 'Certain' },
+  { name: 'MIR', city: 'Oslo', type: 'Musica', link: 'https://www.instagram.com/lufthavnamir', note: 'Grünerløkka Lufthavn, musica dal vivo underground dal 1997', conf: 'Certain' },
+  { name: 'Ingensteds', city: 'Oslo', type: 'Musica', link: 'https://www.instagram.com/ingensteds', note: 'Ex fabbrica tessile Indigo, club/concerti/cultura', conf: 'Certain' },
+  { name: 'Kulturhuset', city: 'Oslo', type: 'Misto', link: 'https://www.instagram.com/kulturhusetioslo', note: '3 piani con bar/cafe/concerti/club', conf: 'Certain' },
+  { name: 'Dattera til Hagen', city: 'Oslo', type: 'Misto', link: 'https://www.instagram.com/datteratilhagen', note: 'Bar/cafe/club con cortile, DJ nel weekend', conf: 'Certain' },
+  { name: 'Kafé Hærverk', city: 'Oslo', type: 'Musica', link: 'https://www.instagram.com/kafehaerverk', note: 'Bar/club per musica sperimentale/indipendente, anche negozio vinili', conf: 'Certain' },
+  { name: 'Vega Scene', city: 'Oslo', type: 'Arte', link: 'https://www.instagram.com/vegascene', note: 'Cinema darte e teatro indipendente dal 2018', conf: 'Certain' },
+  { name: 'Tegnerforbundet', city: 'Oslo', type: 'Arte', link: 'https://www.instagram.com/tegnerforbundet', note: 'Centro per larte del disegno dal 1916', conf: 'Certain' },
+  { name: 'Dansens Hus', city: 'Oslo', type: 'Arte', link: 'https://www.instagram.com/dansenshusoslo', note: 'Scena nazionale per la danza', conf: 'Certain' },
+  { name: 'Galleri Sagene Kunstsmie', city: 'Oslo', type: 'Arte', link: 'https://www.instagram.com/galleri_sagenekunstsmie', note: 'Galleria gestita da artisti nel quartiere Sagene', conf: 'Certain' },
+  { name: 'Murmur', city: 'Amsterdam', type: 'Musica', link: 'https://www.instagram.com/murmur.ams', note: 'Bar/spazio culturale con impianto audio artigianale, ascolto e concerti', conf: 'Certain' },
+  { name: 'Wroclaw Industrial Festival', city: 'Wroclaw', type: 'Musica', link: 'https://www.instagram.com/wroclaw_industrial_festival', note: 'Festival storico dark ambient/industrial/noise', conf: 'Certain' },
+  { name: 'Uptodate Festival', city: 'Bialystok', type: 'Musica', link: 'https://www.instagram.com/uptodatefestival', note: 'Festival elettronica/club culture (non a Lodz come nella tua lista, ma Bialystok)', conf: 'Likely' },
+  { name: 'Unsound Festival', city: 'Cracovia', type: 'Musica', link: 'https://www.instagram.com/unsoundfestival', note: 'Festival musica sperimentale/elettronica, forme evolute del suono', conf: 'Certain' },
+  { name: 'Music Box', city: 'Lisbona', type: 'Musica', link: 'https://www.instagram.com/musicboxlisboa', note: 'Club storico, epicentro scena musicale alternativa', conf: 'Certain' },
+  { name: 'Ministerium', city: 'Lisbona', type: 'Musica', link: 'https://www.instagram.com/ministeriumclub', note: 'Club elettronica dal 2012, house/techno', conf: 'Certain' },
+  { name: 'Out.Fest', city: 'Barreiro', type: 'Musica', link: 'https://www.instagram.com/out.fest', note: 'Festival musica esplorativa/sperimentale, vicino Lisbona', conf: 'Certain' },
+  { name: 'Outra Cena', city: 'Lisbona', type: 'Musica', link: 'https://www.instagram.com/outracena_lisboa', note: 'Club in ex magazzino vinicolo, scena queer/elettronica', conf: 'Certain' },
+  { name: 'Zedosbois (ZDB)', city: 'Lisbona', type: 'Arte', link: 'https://www.instagram.com/galeriazedosbois', note: 'Centro arte contemporanea dal 1994, musica/teatro/danza', conf: 'Certain' },
+  { name: 'Gare', city: 'Porto', type: 'Musica', link: 'https://www.instagram.com/gareporto', note: 'Uno dei migliori club techno underground europei', conf: 'Certain' },
+  { name: 'Cueva de Locos', city: 'Barcellona', type: 'Musica', link: 'https://www.instagram.com/loboscuevade', note: 'Nome trovato leggermente diverso (Lobos vs Locos), verificare sul posto', conf: 'Likely' },
+  { name: 'Casa Montjuïc', city: 'Barcellona', type: 'Misto', link: 'https://www.instagram.com/casa.montjuic', note: 'Musica, cinema e clubbing in piccolo formato', conf: 'Certain' },
+  { name: 'Robadors 23', city: 'Barcellona', type: 'Musica', link: 'https://www.instagram.com/robadors23', note: 'Sala musica indipendente dal 2004, jazz e oltre', conf: 'Certain' },
+  { name: 'Hangar.org', city: 'Barcellona', type: 'Arte', link: 'https://www.instagram.com/hangar_org', note: 'Centro produzione e ricerca artistica', conf: 'Certain' },
+  { name: 'Nitsa Club', city: 'Barcellona', type: 'Musica', link: 'https://www.instagram.com/nitsa_club', note: 'Club elettronica piu longevo di Barcellona, dal 1994, alla Sala Apolo', conf: 'Certain' },
+  { name: 'Moog', city: 'Barcellona', type: 'Musica', link: 'https://www.instagram.com/moog_barcelona', note: 'Club techno storico dal 1996, aperto 365 giorni l\'anno', conf: 'Certain' },
+  { name: 'Sinestesia', city: 'Barcellona', type: 'Musica', link: 'https://www.instagram.com/sinestesia.barcelona', note: 'Bar musicale e sala concerti a Sants, musica/arte/poesia', conf: 'Certain' },
+  { name: 'Babylon', city: 'Barcellona', type: 'Misto', link: 'https://www.instagram.com/babylon.bcn', note: 'Progetto arte/cultura dal 2019', conf: 'Certain' },
+  { name: 'Utopia126', city: 'Barcellona', type: 'Arte', link: 'https://www.instagram.com/utopiamarkets', note: 'Spazio creazione culturale e artistica', conf: 'Certain' },
+  { name: 'Undead Dark Club', city: 'Barcellona', type: 'Musica', link: 'https://www.instagram.com/undeaddarkclub', note: 'Club gotico/alternativo attivo piu antico di Spagna, dal 1996', conf: 'Certain' },
+  { name: 'Wolf Barcelona', city: 'Barcellona', type: 'Musica', link: 'https://www.instagram.com/wolf.barcelona', note: 'Discoteca a Poblenou, ex sede storica Psicodromo', conf: 'Certain' },
+  { name: 'M7 Club', city: 'Barcellona', type: 'Musica', link: 'https://www.instagram.com/theclubm7', note: 'Club underground elettronica a Poble-sec', conf: 'Certain' },
+  { name: 'Meteoro', city: 'Barcellona', type: 'Misto', link: 'https://www.instagram.com/meteoro.bcn', note: 'Associazione culturale Poble Sec, mostre/cinema/concerti/DJ', conf: 'Certain' },
+  { name: 'Astra Space Travel', city: 'Barcellona', type: 'Musica', link: 'https://www.instagram.com/astraspacetravel', note: 'Serate techno underground dal 2015', conf: 'Certain' },
+  { name: 'Alterate Club', city: 'Barcellona', type: 'Musica', link: 'https://www.instagram.com/alterateclub', note: 'Club techno/technometal', conf: 'Certain' },
+  { name: 'El Pumarejo', city: 'Barcellona (Hospitalet)', type: 'Misto', link: 'https://www.instagram.com/elpumarejo', note: 'Rifugio culturale, musica sperimentale/industrial/black metal', conf: 'Certain' },
+  { name: 'AMEBA', city: 'Barcellona', type: 'Musica', link: 'https://www.instagram.com/ameba_bcn', note: 'Associazione musica elettronica di Barcellona, organizza festival annuale', conf: 'Certain' },
+  { name: 'Continental Gràcia', city: 'Barcellona', type: 'Musica', link: 'https://www.instagram.com/sala_continental', note: 'Bar musicale indie rock 80s/90s, musica dal vivo', conf: 'Certain' },
+  { name: 'Soda Acústic', city: 'Barcellona', type: 'Musica', link: 'https://www.instagram.com/sodacustic', note: 'Piccolo locale per concerti dal vivo, jazz/blues/world', conf: 'Certain' },
+  { name: 'Màgia Roja', city: 'Barcellona', type: 'Musica', link: 'https://www.instagram.com/magiarojahq', note: 'Etichetta/associazione culturale, definita da The Quietus la piu importante di Spagna per musica estrema/sperimentale', conf: 'Certain' },
+  { name: 'Absenta del Raval', city: 'Barcellona', type: 'Musica', link: 'https://www.instagram.com/absentaraval', note: 'Cocktail bar con concerti jazz/blues dal vivo nel seminterrato', conf: 'Certain' },
+  { name: 'RED58', city: 'Barcellona', type: 'Musica', link: 'https://www.instagram.com/red58club', note: 'Club techno chiuso nel 2022, ma post recenti suggeriscono riapertura: verificare sul posto', conf: 'Likely' },
+  { name: 'Les Enfants Brillants', city: 'Barcellona', type: 'Musica', link: 'https://www.instagram.com/lesenfantsclub', note: 'Club boutique hi-fi collegato a Input, elettronica', conf: 'Certain' },
+  { name: 'Input Hi Fidelity Dance Club', city: 'Barcellona', type: 'Musica', link: 'https://www.instagram.com/inputdanceclub', note: 'Tempio del techno a Poble Espanyol, sistema Funktion-One', conf: 'Certain' },
+  { name: 'Mira Festival', city: 'Barcellona', type: 'Digital art', link: 'https://www.instagram.com/mirafestival', note: 'Festival digital arts e musica contemporanea dal 2011', conf: 'Certain' },
+  { name: 'Ombra Festival', city: 'Barcellona', type: 'Musica', link: 'https://www.instagram.com/ombrafestival', note: 'Festival industrial/darkwave/elettronica sperimentale, dicembre', conf: 'Certain' },
+  { name: 'Mostra', city: 'Barcellona', type: 'Musica', link: 'https://www.instagram.com/mostrabcn', note: 'Festival piccolo formato, elettronica avant-garde/sperimentale', conf: 'Certain' },
+  { name: 'Sala Caracol', city: 'Madrid', type: 'Musica', link: 'https://www.instagram.com/salacaracol', note: 'Concerti/feste/eventi', conf: 'Certain' },
+  { name: 'Sigh Club', city: 'Madrid', type: 'Musica', link: 'https://www.instagram.com/sigh.club', note: 'Serate house/techno/vinile, alla Cadavra Club', conf: 'Certain' },
+  { name: 'Cadavra Club', city: 'Madrid', type: 'Musica', link: 'https://www.instagram.com/cadavra.club', note: 'Club musica elettronica', conf: 'Certain' },
+  { name: 'Fluido', city: 'Madrid', type: 'Musica', link: 'https://www.instagram.com/fluidoxd', note: 'Serata house il venerdi, alla Sala Stella', conf: 'Certain' },
+  { name: 'Specka', city: 'Madrid', type: 'Musica', link: 'https://www.instagram.com/specka_live', note: 'Sala concerti vicino Santiago Bernabeu', conf: 'Certain' },
+  { name: 'Under', city: 'Madrid', type: 'Musica', link: 'https://www.instagram.com/under_bridge_club', note: 'Spazio house/techno underground, ambiente intimo (nome esatto da confermare)', conf: 'Likely' },
+  { name: 'La Fábrica de Hielo', city: 'Valencia', type: 'Misto', link: 'https://www.instagram.com/lafabricadehielo_', note: 'Ex fabbrica di ghiaccio, ora spazio socioculturale: musica/danza/cinema/teatro', conf: 'Certain' },
+  { name: 'Spook', city: 'Valencia', type: 'Musica', link: 'https://www.instagram.com/spook.club', note: 'Storico club dal 1984', conf: 'Certain' },
+  { name: 'Skeppet', city: 'Göteborg', type: 'Musica', link: 'https://www.instagram.com/skeppet_gbg', note: 'Live scen/ristorante/studio musicale', conf: 'Certain' },
+  { name: 'Trädgården / Under Bron', city: 'Stoccolma', type: 'Musica', link: 'https://www.instagram.com/tradgarden', note: 'Trädgården (estivo) e Under Bron (invernale), storico complesso club sotto un ponte', conf: 'Certain' },
+  { name: 'Debaser', city: 'Stoccolma', type: 'Musica', link: 'https://www.instagram.com/debasersthlm', note: 'Sala concerti/club iconica dal 2002', conf: 'Certain' },
+  { name: 'Slaktkyrkan', city: 'Stoccolma', type: 'Musica', link: 'https://www.instagram.com/slaktkyrkan', note: 'Sala concerti/club, ex mattatoio', conf: 'Certain' },
+  { name: 'Nalen', city: 'Stoccolma', type: 'Musica', link: 'https://www.instagram.com/nalenstockholm', note: 'Sala storica dal 1888, concerti/musica/ristorante', conf: 'Certain' },
+  { name: 'Fasching', city: 'Stoccolma', type: 'Musica', link: 'https://www.instagram.com/faschingsthlm', note: 'Jazz club dal 1977, uno dei piu antichi in Europa', conf: 'Certain' },
+  { name: 'Klubb Död', city: 'Stoccolma', type: 'Musica', link: 'https://www.instagram.com/klubbdod', note: 'Serata goth/post-punk/synth/cold wave', conf: 'Certain' },
+  { name: 'Inkonst', city: 'Malmö', type: 'Misto', link: 'https://www.instagram.com/inkonst', note: 'Spazio indipendente per musica/performance/cultura non convenzionale (nella tua lista come "Inkost", probabile refuso)', conf: 'Likely' },
+  { name: 'Aether', city: 'Budapest', type: 'Musica', link: 'https://www.instagram.com/aetherclub', note: 'Club techno/house underground', conf: 'Certain' },
+  { name: 'Turbina', city: 'Budapest', type: 'Misto', link: 'https://www.instagram.com/turbinabudapest', note: 'Spazio arte/musica multifunzionale', conf: 'Certain' },
+  { name: 'Arzenál', city: 'Budapest', type: 'Musica', link: 'https://www.instagram.com/arzenalbudapest', note: 'Il piu grande club indoor dUngheria, ex fabbrica di armi (probabile match per "Arsenal")', conf: 'Certain' },
+  { name: 'Pure Lust', city: 'Budapest', type: 'Musica', link: 'https://www.instagram.com/pure._.lust', note: 'Collettivo/serate techno-house', conf: 'Certain' },
+  { name: 'Badhanna', city: 'Budapest', type: 'Musica', link: 'https://www.instagram.com/badhannabudapest', note: 'Club con serate house neon-lit ogni weekend', conf: 'Certain' },
+  { name: 'Fekete Zaj', city: 'Mátra (Ungheria)', type: 'Musica', link: 'https://www.instagram.com/feketezaj', note: 'Festival darkwave/post-punk/experimental/metal estremo', conf: 'Certain' },
+  { name: 'Vurt', city: 'Seul', type: 'Musica', link: 'https://www.instagram.com/vurt_seoul', note: 'Club techno, un po fuori dal centro', conf: 'Certain' },
+  { name: 'Cakeshop', city: 'Seul', type: 'Musica', link: 'https://www.instagram.com/cakeshopseoul', note: 'Club underground a Itaewon, future house/hip-hop/RnB', conf: 'Certain' },
+  { name: 'Seendosi', city: 'Seul', type: 'Misto', link: 'https://www.instagram.com/seendosi', note: 'Spazio artistico multiforme dal 2015: bar/concerti/mostre/proiezioni', conf: 'Certain' },
+  { name: 'Club Daphnia', city: 'Osaka', type: 'Musica', link: 'https://www.instagram.com/club_daphnia', note: 'Club techno/house, sistema audio DIY rinomato', conf: 'Certain' },
+  { name: 'ForestLimit', city: 'Tokyo', type: 'Musica', link: 'https://www.instagram.com/forestlimit_info', note: 'Piccolo spazio DIY per musica sperimentale a Hatagaya', conf: 'Certain' },
+  { name: 'Contact', city: 'Tokyo', type: 'Musica', link: 'https://www.instagram.com/contacttokyo', note: 'Club techno storico, edificio demolito nel 2022 ma IG sembra attivo: verificare se riaperto altrove', conf: 'Likely' },
+  { name: 'Club Asia', city: 'Tokyo', type: 'Musica', link: 'https://www.instagram.com/clubasia', note: 'Storico club/live house a Shibuya dal 1996', conf: 'Certain' },
+  { name: 'Space.Tokyo', city: 'Tokyo', type: 'Musica', link: 'https://www.instagram.com/space.tokyo', note: 'Club/spazio eventi', conf: 'Certain' },
+  { name: 'Kinone Pension', city: 'Tokyo', type: 'Musica', link: 'https://www.instagram.com/kinone_pension', note: 'Club nascosto tra le piste dellaeroporto di Narita (area metropolitana di Tokyo), costruito dagli attivisti anti-aeroporto negli anni 80', conf: 'Certain' },
+  { name: 'Grasslands Festival', city: 'Kathmandu', type: 'Musica', link: 'https://www.instagram.com/grasslandsfestival', note: 'Festival musicale boutique dellHimalaya, dal 2021', conf: 'Certain' },
+  { name: 'Unmute', city: 'Hanoi', type: 'Musica', link: 'https://www.instagram.com/unmute.hanoi', note: 'Spazio per crescita e voci autentiche, musica elettronica', conf: 'Certain' },
+  { name: 'Club Pantera', city: 'San Paolo', type: 'Musica', link: 'https://www.instagram.com/pantera.clube', note: 'Rock/post-punk/elettronica', conf: 'Certain' },
+  { name: 'Lagarta Bar', city: 'San Paolo', type: 'Musica', link: 'https://www.instagram.com/lagartabar', note: 'Bar con musica', conf: 'Certain' },
+  { name: 'Cama de Gato', city: 'San Paolo', type: 'Musica', link: 'https://www.instagram.com/camadegat0', note: 'Bar con ping pong e post-punk', conf: 'Certain' },
+  { name: 'Porta', city: 'San Paolo', type: 'Musica', link: 'https://www.instagram.com/_____porta_____', note: 'Casa culturale indipendente dal 2022: musica/bar/studio/vinile', conf: 'Certain' },
+  { name: 'Fourtwenty Sound', city: 'Bogotá', type: 'Musica', link: 'https://www.instagram.com/fourtwentysound', note: 'Producer/DJ/label head, tropical bass', conf: 'Certain' },
+  { name: 'Yu Yu', city: 'Città del Messico', type: 'Musica', link: 'https://www.instagram.com/yuyucineclub', note: 'Club intimo in seminterrato, elettronica avant-garde', conf: 'Certain' },
+  { name: 'La Brisa', city: 'Bali (Canggu)', type: 'Misto', link: 'https://www.instagram.com/labrisabali', note: 'Beach club con piscina, musica, mercato domenicale', conf: 'Certain' },
+  { name: 'Lunchmeat Festival', city: 'Praga', type: 'Digital art', link: 'https://www.instagram.com/lunchmeatfestival', note: 'Festival musica elettronica avanzata e new media art dal 2010', conf: 'Certain' },
+  { name: 'Acusmatiq Festival', city: 'Ancona', type: 'Musica', link: 'https://www.instagram.com/acusmatiq_festival', note: 'Suoni elettronici dal 2006 alla Mole Vanvitelliana', conf: 'Certain' },
+  { name: 'Dancity Festival', city: 'Foligno', type: 'Musica', link: 'https://www.instagram.com/dancityfestival', note: 'Festival musica elettronica dal 2006', conf: 'Certain' },
+  { name: 'M\'era Luna', city: 'Hildesheim (Germania)', type: 'Musica', link: 'https://www.instagram.com/meralunafstvl', note: 'Il piu grande festival gothic/darkwave/EBM di Germania, dal 2000', conf: 'Certain' },
+  { name: 'Keroxen', city: 'Tenerife', type: 'Musica', link: 'https://www.instagram.com/keroxen', note: 'Festival/etichetta arte sperimentale, ex deposito olio', conf: 'Certain' },
+  { name: 'Grauzone Festival', city: 'LAia (Olanda)', type: 'Musica', link: 'https://www.instagram.com/grauzone_festival', note: 'Festival post-punk/darkwave/EBM/industrial, musica/film/arte', conf: 'Certain' },
+  { name: 'Refractor', city: 'Toledo (Spagna)', type: 'Musica', link: 'https://www.instagram.com/refractor.festival', note: 'Festival elettronica in un villaggio, connessione con la natura', conf: 'Certain' },
+  { name: 'Nuits Sonores', city: 'Lione', type: 'Musica', link: 'https://www.instagram.com/nuits_sonores', note: 'Grande festival musica elettronica/digitale dal 2003, taggato da un artista club', conf: 'Certain' },
+  { name: 'Optimistic Festival', city: 'Parigi', type: 'Musica', link: 'https://www.instagram.com/optimisticfestival', note: 'Festival elettronica, taggato da un artista club', conf: 'Likely' },
+  { name: 'Iota Festival', city: 'Nantes', type: 'Musica', link: 'https://www.instagram.com/iota_festival', note: 'Festival musica elettronica/arti digitali, taggato da un artista club', conf: 'Likely' },
+  { name: 'Bonjour C\'est Cluster', city: 'Lille', type: 'Musica', link: 'https://www.instagram.com/bonjourcestcluster', note: 'Collettivo/promoter, taggato da un artista club', conf: 'Certain' },
+  { name: 'Commune de Nuit', city: 'Marsiglia', type: 'Musica', link: 'https://www.instagram.com/communedenuit', note: 'Collettivo/promoter notturno, taggato da un artista club', conf: 'Likely' },
+  { name: 'OHM Town', city: 'Marsiglia', type: 'Musica', link: 'https://www.instagram.com/ohm_town', note: 'Collettivo/spazio musica elettronica, taggato da un artista club', conf: 'Likely' },
+  { name: 'ARCAN.IO', city: 'Marsiglia', type: 'Musica', link: 'https://www.instagram.com/arcan.io', note: 'Collettivo/promoter elettronica, taggato da un artista club', conf: 'Likely' },
+  { name: 'Drama Event', city: 'Marsiglia', type: 'Musica', link: 'https://www.instagram.com/drama.event', note: 'Organizzatore eventi/serate club, taggato da un artista club', conf: 'Likely' },
+  { name: 'Unite.22', city: 'Marsiglia', type: 'Musica', link: 'https://www.instagram.com/unite.22_marseille', note: 'Collettivo/promoter locale, taggato da un artista club', conf: 'Likely' },
+  { name: 'Flow Festival', city: 'Helsinki', type: 'Musica', link: 'https://www.instagram.com/flowfestivalhelsinki', note: 'Festival musica e arte urbana dal 2004, area ex centrale elettrica Suvilahti', conf: 'Certain' },
+  { name: 'Mutek Barcelona', city: 'Barcellona', type: 'Digital art', link: 'https://www.instagram.com/mutekes', note: 'Festival internazionale creativita digitale e musica elettronica, dal 2009 (biennale dal 2024)', conf: 'Certain' },
+  { name: 'Parallel Festival', city: 'Toledo (Spagna)', type: 'Musica', link: 'https://www.instagram.com/parallelfestival', note: 'Festival techno/ambient/sperimentale sulle montagne catalane (Port del Comte)', conf: 'Certain' },
+  { name: 'Positive Education', city: 'Lione', type: 'Musica', link: 'https://www.instagram.com/positiveeducation', note: 'Festival elettronica di riferimento a Saint-Etienne (area Lione/Rodano-Alpi), dal 2016', conf: 'Certain' },
+  { name: 'E-Only Festival', city: 'Lipsia', type: 'Musica', link: 'https://www.instagram.com/eonlyfestival', note: 'Festival EBM/darkwave nello storico Stadtbad di Lipsia', conf: 'Certain' },
+  { name: 'Ansia Festival', city: 'Bogotá', type: 'Musica', link: 'https://www.instagram.com/ansiafestival', note: 'Festival post-punk/minimal synth/cold wave/dark wave', conf: 'Certain' },
+  { name: 'Next Festival', city: 'Bratislava', type: 'Musica', link: 'https://www.instagram.com/festivalnext', note: 'Festival musica avventurosa/sonic art dal 2000', conf: 'Certain' },
+  { name: 'Kala Festival', city: 'Dhermi (Albania)', type: 'Musica', link: 'https://www.instagram.com/kalafestival', note: 'Festival boutique sulla spiaggia: house/disco/techno/funk/soul', conf: 'Certain' },
+
+  // Venue del tour Dame Area
+  { name: 'Elevate Festival', city: 'Graz', type: 'Digital art', link: 'https://www.instagram.com/elevate_festival', note: 'Festival musica/arte/discorso politico dal 2005, tappa tour Dame Area. Handle corretto dopo verifica.', conf: 'Certain' },
+  { name: 'The Hare and Hounds', city: 'Birmingham', type: 'Musica', link: 'https://www.instagram.com/hareandhoundsbrum', note: 'Pub/venue concerti, tappa tour Dame Area', conf: 'Certain' },
+  { name: 'SOUP', city: 'Manchester', type: 'Musica', link: 'https://www.instagram.com/soup_mcr', note: 'Venue concerti/club, tappa tour Dame Area', conf: 'Certain' },
+  { name: 'Earth', city: 'Londra', type: 'Musica', link: 'https://www.instagram.com/earthhackney', note: 'Venue concerti a Hackney, tappa tour Dame Area', conf: 'Certain' },
+  { name: 'Stage Live', city: 'Bilbao', type: 'Musica', link: 'https://www.instagram.com/stagelivebilbao', note: 'Sala concerti, tappa tour Dame Area', conf: 'Certain' },
+  { name: 'Saccade', city: 'Bristol', type: 'Musica', link: 'https://www.instagram.com/accidentalmeetings', note: 'Serata/promoter (IG del collettivo Accidental Meetings), tappa tour Dame Area', conf: 'Certain' },
+  { name: 'Factoria de So', city: 'Palma di Maiorca', type: 'Musica', link: 'https://www.instagram.com/factoriadeso', note: 'Sala concerti, tappa tour Dame Area', conf: 'Certain' },
+  { name: 'Son Letal', city: 'San José', type: 'Musica', link: 'https://www.instagram.com/sonletal.cr', note: 'Venue/promoter, tappa tour Dame Area', conf: 'Certain' },
+  { name: 'Asilo', city: 'Bogotá', type: 'Musica', link: 'https://www.instagram.com/asiloclub', note: 'Bar/venue dark/post-punk, tappa tour Dame Area (legato anche ad Ansia Festival). Handle corretto dopo verifica.', conf: 'Certain' },
+  { name: 'Club Vita', city: 'Santiago del Cile', type: 'Musica', link: 'https://www.instagram.com/clubvita_', note: 'Club, tappa tour Dame Area', conf: 'Certain' },
+  { name: 'Casa Colombo', city: 'Buenos Aires', type: 'Musica', link: 'https://www.instagram.com/casacolombobsas', note: 'Venue concerti/club, tappa tour Dame Area', conf: 'Certain' },
+  { name: 'Audio Rebel', city: 'Rio de Janeiro', type: 'Musica', link: 'https://www.instagram.com/audiorebel', note: 'Club/venue, tappa tour Dame Area', conf: 'Certain' },
+  { name: 'Aurora Festival', city: 'Natal', type: 'Musica', link: 'https://www.instagram.com/aurorafestivalnatal', note: 'Festival musicale, tappa tour Dame Area', conf: 'Certain' },
+  { name: 'Embassat Festival', city: 'Sabadell', type: 'Musica', link: 'https://www.instagram.com/embassat', note: 'Festival musicale, tappa tour Dame Area', conf: 'Certain' },
+  { name: 'Retrofuture', city: 'La Coruña', type: 'Musica', link: 'https://www.instagram.com/retrofutureclub', note: 'Club, tappa tour Dame Area', conf: 'Certain' },
+  { name: 'Garage Mu Festival', city: 'Parigi', type: 'Musica', link: 'https://www.instagram.com/collectifmu', note: 'Festival del Collectif MU alla Station-Gare des Mines, tappa tour Dame Area. Handle corretto dopo verifica.', conf: 'Certain' },
+  { name: 'Volks', city: 'Brighton', type: 'Musica', link: 'https://www.instagram.com/volksbrighton', note: 'Club/venue, tappa tour Dame Area', conf: 'Certain' },
+  { name: 'Outer Waves Festival', city: 'Liverpool', type: 'Musica', link: 'https://www.instagram.com/outerwavesfestival', note: 'Festival musica/arte sperimentale dal 2025, ha ospitato Dame Area. Handle corretto dopo verifica.', conf: 'Certain' },
+  { name: 'Serralves em Festa', city: 'Porto', type: 'Arte', link: 'https://www.instagram.com/museuserralves', note: 'Grande festa/festival annuale del museo Serralves, tappa tour Dame Area', conf: 'Certain' },
+  { name: 'Festival Impulso', city: 'Caldas da Rainha', type: 'Musica', link: 'https://www.instagram.com/festival_impulso', note: 'Festival musicale, tappa tour Dame Area. Handle corretto dopo verifica.', conf: 'Certain' },
+  { name: 'MKC', city: 'Spalato', type: 'Misto', link: 'https://www.instagram.com/mkc_split', note: 'Centro culturale giovanile, concerti/eventi, tappa tour Dame Area', conf: 'Certain' },
+  { name: 'Pies Pala Pop', city: 'Rennes', type: 'Musica', link: 'https://www.instagram.com/piespalapop', note: 'Venue/promoter concerti, tappa tour Dame Area', conf: 'Certain' },
+  { name: 'Best Kept Secret Festival', city: 'Hilvarenbeek', type: 'Musica', link: 'https://www.instagram.com/bksfestival', note: 'Grande festival musicale olandese, tappa tour Dame Area', conf: 'Certain' },
+  { name: 'Rust', city: 'Copenhagen', type: 'Musica', link: 'https://www.instagram.com/rustcph', note: 'Club/venue concerti, tappa tour Dame Area', conf: 'Certain' },
+  { name: 'Fête de la Musique Bruxelles', city: 'Bruxelles', type: 'Misto', link: 'https://www.instagram.com/fetedelamusiquebruxelles', note: 'Edizione bruxellese della giornata mondiale della musica, tappa tour Dame Area', conf: 'Certain' },
+  { name: 'Rock In Bourlon', city: 'Bourlon', type: 'Musica', link: 'https://www.instagram.com/rockinbourlon', note: 'Festival rock, tappa tour Dame Area', conf: 'Certain' },
+  { name: 'Convivencia Festival', city: 'Tolosa', type: 'Musica', link: 'https://www.instagram.com/convivencia_festival', note: 'Scena navigante di musiche del mondo, tappa tour Dame Area. Handle corretto dopo verifica.', conf: 'Certain' },
+  { name: 'Orbeat Festival', city: "L'Aquila", type: 'Musica', link: 'https://www.instagram.com/orbeat.collective', note: 'Festival musica contemporanea/sperimentazione artistica, tappa tour Dame Area. Handle corretto dopo verifica.', conf: 'Certain' },
+  { name: 'Lethargy Festival', city: 'Zurigo', type: 'Musica', link: 'https://www.instagram.com/lethargyfestival', note: 'Festival musicale, tappa tour Dame Area', conf: 'Certain' },
+  { name: 'Vodafone Paredes de Coura Festival', city: 'Paredes de Coura', type: 'Musica', link: 'https://www.instagram.com/vodafoneparedesdecoura', note: 'Grande festival musicale portoghese, tappa tour Dame Area', conf: 'Certain' },
+  { name: 'Green Man Festival', city: 'Brecons Beacons', type: 'Musica', link: 'https://www.instagram.com/greenmanfest', note: 'Festival musicale/arte nel Galles, tappa tour Dame Area', conf: 'Certain' },
+
+  // Venue del tour Sangre de Muérdago (European Tour Spring 2026)
+  { name: 'Le Cumulus', city: 'Bordeaux', type: 'Musica', link: 'https://www.instagram.com/lecumulus_bdx', note: 'Venue concerti, tappa tour Sangre de Muérdago', conf: 'Certain' },
+  { name: 'Cold Crash', city: 'Nantes', type: 'Musica', link: 'https://www.instagram.com/coldcrashnantes', note: 'Venue/collettivo concerti, tappa tour Sangre de Muérdago', conf: 'Certain' },
+  { name: 'Église Sépulcre', city: 'Caen', type: 'Musica', link: 'https://www.instagram.com/eglise_sepulcre_caen', note: 'Ex chiesa riconvertita in venue concerti, tappa tour Sangre de Muérdago', conf: 'Certain' },
+  { name: 'House of Mysteries', city: 'Gent', type: 'Musica', link: 'https://www.instagram.com/houseofmysteriesgent', note: 'Venue concerti, tappa tour Sangre de Muérdago. Handle corretto dal link diretto dell\'utente.', conf: 'Certain' },
+  { name: 'De Gudde Wellen', city: 'Lussemburgo', type: 'Musica', link: 'https://www.instagram.com/deguddewellen', note: 'Birreria/venue concerti, tappa tour Sangre de Muérdago', conf: 'Certain' },
+  { name: 'B-Side', city: 'Münster', type: 'Musica', link: 'https://www.instagram.com/bside.ms', note: 'Venue concerti, tappa tour Sangre de Muérdago', conf: 'Certain' },
+  { name: 'Die Ganze Bäckerei', city: 'Flensburg', type: 'Musica', link: 'https://www.instagram.com/die_ganze_baeckerei', note: 'Centro culturale/venue concerti in ex panificio, tappa tour Sangre de Muérdago', conf: 'Certain' },
+  { name: 'Huset', city: 'Aalborg', type: 'Misto', link: 'https://www.instagram.com/husetaalborg', note: 'Centro culturale/venue concerti, tappa tour Sangre de Muérdago', conf: 'Certain' },
+  { name: 'UT Connewitz', city: 'Lipsia', type: 'Musica', link: 'https://www.instagram.com/ut_connewitz', note: 'Storico cinema/teatro riconvertito in venue concerti, tappa tour Sangre de Muérdago', conf: 'Certain' },
+  { name: 'Kostel CČE Nusle', city: 'Praga', type: 'Musica', link: 'https://www.instagram.com/farnisbor_cce_nusle', note: 'Chiesa evangelica usata come venue concerti, tappa tour Sangre de Muérdago', conf: 'Certain' },
+  { name: 'Grüntal', city: 'Winterthur', type: 'Musica', link: 'https://www.instagram.com/gruntalwinterthur', note: 'Venue concerti, tappa tour Sangre de Muérdago', conf: 'Certain' },
+  { name: 'A Way', city: 'Liestal', type: 'Musica', link: 'https://www.instagram.com/away.liestal', note: 'Venue concerti, tappa tour Sangre de Muérdago', conf: 'Certain' },
+  { name: 'Le Zoo Usine', city: 'Ginevra', type: 'Musica', link: 'https://www.instagram.com/zoo_usine', note: 'Centro culturale/venue concerti, tappa tour Sangre de Muérdago', conf: 'Certain' },
+
+  // Elenco completo locali/festival (seconda tabella),
+  { name: 'Ban Yerevan', city: 'Erevan', type: 'Musica', link: 'https://www.instagram.com/ban_yerevan', note: 'Bar/club musica elettronica', conf: 'Certain' },
+  { name: 'NOPA Festival', city: 'Erevan', type: 'Musica', link: 'https://www.instagram.com/nopa.sound', note: 'Festival for sonic arts. Handle corretto dopo verifica.', conf: 'Certain' },
+  { name: 'Dom im Berg', city: 'Graz', type: 'Arte', link: 'https://www.instagram.com/domimberg', note: 'Sala eventi/arte dentro una montagna', conf: 'Certain' },
+  { name: 'Intertonale', city: 'Scheibbs', type: 'Musica', link: 'https://www.instagram.com/intertonale', note: 'Seminario e festival musicale dal 2016 (citta corretta dopo verifica: era sbagliata, non Gresseneck)', conf: 'Certain' },
+  { name: 'Inseminoid', city: 'Innsbruck', type: 'Musica', link: 'https://www.instagram.com/inseminoid', note: 'Evento/collettivo musica elettronica', conf: 'Certain' },
+  { name: 'mdw (Universitat fur Musik)', city: 'Vienna', type: 'Arte', link: 'https://www.instagram.com/mdw_wien', note: 'Universita di musica e arti performative', conf: 'Certain' },
+  { name: 'Sonic Territories', city: 'Vienna', type: 'Musica', link: 'https://www.instagram.com/sonicterritories', note: 'Festival/collettivo musica sperimentale', conf: 'Certain' },
+  { name: 'Unsafe+Sounds Festival', city: 'Vienna', type: 'Musica', link: 'https://www.instagram.com/unsafeandsounds', note: 'Festival musica sperimentale/noise dal 2015. Handle corretto dopo verifica.', conf: 'Certain' },
+  { name: 'Vienna Music Institute', city: 'Vienna', type: 'Arte', link: 'https://www.instagram.com/vienna_music_institute', note: 'Istituto musicale', conf: 'Certain' },
+  { name: 'Het Bos', city: 'Anversa', type: 'Misto', link: 'https://www.instagram.com/hetbos', note: 'Spazio arte/musica/teatro sperimentale', conf: 'Certain' },
+  { name: 'Botanique', city: 'Bruxelles', type: 'Musica', link: 'https://www.instagram.com/botanique_bxl', note: 'Sala concerti in un giardino botanico storico dal 1984. Handle corretto dopo verifica.', conf: 'Certain' },
+  { name: 'Kiosk Radio', city: 'Bruxelles', type: 'Musica', link: 'https://www.instagram.com/kiosk.radio', note: 'Web radio/collettivo musica elettronica. Handle corretto dopo verifica.', conf: 'Certain' },
+  { name: 'Novas Frequências', city: 'Rio de Janeiro', type: 'Musica', link: 'https://www.instagram.com/novasfrequencias', note: 'Festival musica sperimentale/contemporanea', conf: 'Certain' },
+  { name: 'Cecilia', city: 'San Paolo', type: 'Misto', link: 'https://www.instagram.com/ceciliacultural', note: 'Spazio culturale/musica. Handle corretto dopo verifica.', conf: 'Certain' },
+  { name: 'Entreposto', city: 'San Paolo', type: 'Misto', link: 'https://www.instagram.com/entreposto.sp', note: 'Spazio culturale/eventi', conf: 'Certain' },
+  { name: 'Veneno Radio', city: 'San Paolo', type: 'Musica', link: 'https://www.instagram.com/veneno.live', note: 'Web radio musica elettronica', conf: 'Certain' },
+  { name: 'MUTEK Montreal / Club SAT', city: 'Montréal', type: 'Digital art', link: 'https://www.instagram.com/mutekmontreal', note: 'Festival internazionale creativita digitale, sede storica di MUTEK', conf: 'Certain' },
+  { name: 'Club SAT', city: 'Montréal', type: 'Digital art', link: 'https://www.instagram.com/sat_montreal', note: 'Societe des Arts Technologiques, centro digital art', conf: 'Certain' },
+  { name: 'PHI Centre', city: 'Montréal', type: 'Arte', link: 'https://www.instagram.com/phicentre', note: 'Centro arte/cinema/musica multidisciplinare', conf: 'Certain' },
+    { name: 'Radio BYYB', city: 'Shanghai', type: 'Musica', link: 'https://www.instagram.com/byyb.radio', note: 'Community radio a Changle Rd, scena elettronica underground (handle corretto dopo verifica: era sbagliato)', conf: 'Certain' },
+  { name: 'Tearoom Exit', city: 'Shanghai', type: 'Musica', link: 'https://www.instagram.com/exitshanghai', note: 'Club musica elettronica (handle corretto dopo verifica: era sbagliato)', conf: 'Certain' },
+  { name: 'Abyss', city: 'Shanghai', type: 'Musica', link: 'https://www.instagram.com/abyss_shanghai', note: 'Club hard techno/gender-expressive, ex "151"', conf: 'Certain' },
+  { name: 'OIL', city: 'Shenzhen', type: 'Musica', link: 'https://www.instagram.com/oilclub_official', note: 'Storico club underground dal 2017, sistema audio Danley unico in Asia, gia Club of the Week su Resident Advisor (handle corretto dopo verifica: era sbagliato)', conf: 'Certain' },
+  { name: 'Casa Dao', city: 'Hong Kong', type: 'Musica', link: 'https://www.instagram.com/casadao_hk', note: 'Serate club ogni sabato notte a Sheung Wan (handle corretto dopo verifica: era sbagliato)', conf: 'Certain' },
+  { name: 'Bogotrax', city: 'Bogotá', type: 'Musica', link: 'https://www.instagram.com/bogotrax', note: 'Festival/collettivo musica elettronica sperimentale. Handle corretto dopo verifica.', conf: 'Certain' },
+  { name: 'Cincuentacincuenta', city: 'Medellín', type: 'Musica', link: 'https://www.instagram.com/cincuentacincuenta.mde', note: 'Collettivo/venue musica elettronica', conf: 'Certain' },
+  { name: 'Attack Fest / AKC Attack', city: 'Zagabria', type: 'Misto', link: 'https://www.instagram.com/akcattack', note: 'Centro culturale autonomo, festival/eventi', conf: 'Certain' },
+  { name: 'Alter', city: 'Aarhus', type: 'Musica', link: 'https://www.instagram.com/alter.festival', note: 'Festival musica trasgressiva/avventurosa e arte. Handle corretto dopo verifica.', conf: 'Certain' },
+  { name: 'Le Sucre', city: 'Lione', type: 'Misto', link: 'https://www.instagram.com/lesucrelyon', note: 'Ex raffineria di zucchero, ora spazio arte/musica/club', conf: 'Certain' },
+  { name: 'Actoral / La Cômerie', city: 'Marsiglia', type: 'Arte', link: 'https://www.instagram.com/festivalactoral', note: 'Festival arti performative/teatro/danza', conf: 'Certain' },
+  { name: 'AMI Marseille', city: 'Marsiglia', type: 'Musica', link: 'https://www.instagram.com/ami_marseille', note: 'Associazione musiche innovatrices, sala concerti', conf: 'Certain' },
+  { name: 'Ballet National de Marseille', city: 'Marsiglia', type: 'Arte', link: 'https://www.instagram.com/balletnationaldemarseille', note: 'Compagnia di danza contemporanea', conf: 'Certain' },
+  { name: 'Boundless', city: 'Marsiglia', type: 'Musica', link: 'https://www.instagram.com/boundless_collectif', note: 'Collettivo rave alternativi. Handle corretto dopo verifica (era sbagliato).', conf: 'Certain' },
+  { name: 'Docks des Suds', city: 'Marsiglia', type: 'Musica', link: 'https://www.instagram.com/docksdessuds', note: 'Sala concerti, sede del festival Marsatac', conf: 'Certain' },
+  { name: 'Ikse Ikse', city: 'Marsiglia', type: 'Musica', link: 'https://www.instagram.com/ikseikse', note: 'Collettivo/promoter musica elettronica', conf: 'Certain' },
+  { name: 'Local Warming Festival', city: 'Marsiglia', type: 'Musica', link: 'https://www.instagram.com/localwarmingfestival', note: 'Festival musica elettronica', conf: 'Certain' },
+  { name: 'Marsatac', city: 'Marsiglia', type: 'Musica', link: 'https://www.instagram.com/marsatac', note: 'Grande festival musicale ai Docks des Suds', conf: 'Certain' },
+  { name: 'Metaphore Collectif', city: 'Marsiglia', type: 'Misto', link: 'https://www.instagram.com/metaphore.collectif', note: 'Collettivo artistico (gia in TO-DO/COLLETTIVI della lista originale). Handle corretto dopo verifica (era sbagliato).', conf: 'Certain' },
+  { name: 'Scopitone Festival', city: 'Nantes', type: 'Digital art', link: 'https://www.instagram.com/stereolux_scopitone', note: 'Festival culture elettroniche/arti digitali, organizzato da Stereolux. Handle corretto dopo verifica.', conf: 'Certain' },
+  { name: '3537', city: 'Parigi', type: 'Musica', link: 'https://www.instagram.com/3537org', note: 'Spazio associativo musica/arte', conf: 'Certain' },
+  { name: 'Bourse de Commerce', city: 'Parigi', type: 'Arte', link: 'https://www.instagram.com/boursedecommerce', note: 'Museo arte contemporanea (Fondazione Pinault)', conf: 'Certain' },
+  { name: 'Centre Culturel Irlandais', city: 'Parigi', type: 'Arte', link: 'https://www.instagram.com/ccirlandais', note: 'Centro culturale, eventi/musica/arte', conf: 'Certain' },
+  { name: 'La Gaîté Lyrique', city: 'Parigi', type: 'Digital art', link: 'https://www.instagram.com/gaitelyrique', note: 'Centro cultura digitale/musica/arte', conf: 'Certain' },
+  { name: 'La Station - Gare des Mines', city: 'Parigi', type: 'Misto', link: 'https://www.instagram.com/stationgaredesmines', note: 'Ex stazione merci riconvertita in spazio arte/musica. Handle corretto dopo verifica.', conf: 'Certain' },
+  { name: 'Rinse France', city: 'Parigi', type: 'Musica', link: 'https://www.instagram.com/rinsefrance', note: 'Radio/collettivo musica elettronica/bass', conf: 'Certain' },
+  { name: 'Césaré', city: 'Reims', type: 'Musica', link: 'https://www.instagram.com/cesare_cncm', note: 'Centro nazionale creazione musicale', conf: 'Certain' },
+  { name: 'Maintenant Festival', city: 'Rennes', type: 'Digital art', link: 'https://www.instagram.com/maintenant_festival', note: 'Festival musica elettronica/arti digitali. Handle corretto dopo verifica.', conf: 'Certain' },
+  { name: 'La Communale', city: 'Saint-Ouen (Parigi)', type: 'Misto', link: 'https://www.instagram.com/lacommunalesaintouen', note: 'Spazio culturale/musica', conf: 'Certain' },
+  { name: 'Karmen Camina', city: 'Strasburgo', type: 'Musica', link: 'https://www.instagram.com/karmen.camina', note: 'Collettivo/venue musica', conf: 'Certain' },
+  { name: '4GB Festival', city: 'Tbilisi', type: 'Musica', link: 'https://www.instagram.com/4gbfestival', note: 'Festival musica elettronica dal 2011, dedicato al DJ georgiano Gio Bakanidze. Handle corretto dopo verifica.', conf: 'Certain' },
+  { name: 'Golden Pudel', city: 'Amburgo', type: 'Musica', link: 'https://www.instagram.com/pudel_com', note: 'Storico club underground sul porto. Handle corretto dopo verifica (era sbagliato).', conf: 'Certain' },
+  { name: 'MS Stubnitz', city: 'Amburgo', type: 'Musica', link: 'https://www.instagram.com/ms.stubnitz', note: 'Nave rompighiaccio riconvertita in venue concerti/club. Handle corretto dopo verifica.', conf: 'Certain' },
+  { name: '6*Festival', city: 'Bayreuth', type: 'Musica', link: 'https://www.instagram.com/6festival_bayreuth', note: 'Festival musicale', conf: 'Certain' },
+  { name: '90mil', city: 'Berlino', type: 'Musica', link: 'https://www.instagram.com/90mil___', note: 'Spazio multidisciplinare (arte/teatro/radio/ceramica/musica). Handle corretto dopo verifica.', conf: 'Certain' },
+  { name: 'ÆDEN', city: 'Berlino', type: 'Musica', link: 'https://www.instagram.com/aedenberlin', note: 'Club musica elettronica', conf: 'Certain' },
+  { name: 'Berghain / Säule / Kantine', city: 'Berlino', type: 'Musica', link: 'https://www.instagram.com/berghain_oberbaumbridge', note: 'Complesso club techno leggendario', conf: 'Likely' },
+  { name: 'CTM Festival', city: 'Berlino', type: 'Digital art', link: 'https://www.instagram.com/ctmfestival', note: 'Festival musica elettronica sperimentale/arti digitali. Handle confermato dal link diretto dell\'utente.', conf: 'Certain' },
+  { name: 'Fitzroy', city: 'Berlino', type: 'Musica', link: 'https://www.instagram.com/fitzroy_berlin', note: 'Club/bar musica elettronica', conf: 'Certain' },
+  { name: 'Kesselhaus', city: 'Berlino', type: 'Musica', link: 'https://www.instagram.com/kesselhaus_berlin', note: 'Sala concerti nella ex fabbrica di birra Kulturbrauerei', conf: 'Certain' },
+  { name: 'Kwia', city: 'Berlino', type: 'Musica', link: 'https://www.instagram.com/kwia.berlin', note: 'CHIUSO il 25 luglio 2026 (listening bar ambient a Neukolln dal 2021, affitto insostenibile). Handle corretto dopo verifica.', conf: 'Certain' },
+  { name: 'MONOM', city: 'Berlino', type: 'Digital art', link: 'https://www.instagram.com/monomstudios', note: 'Studio arte sonora spaziale/digitale al Funkhaus Berlin, primo sistema 4DSOUND. Handle corretto dopo verifica.', conf: 'Certain' },
+  { name: 'Ohm', city: 'Berlino', type: 'Musica', link: 'https://www.instagram.com/ohm_berlin', note: 'Club musica elettronica sperimentale', conf: 'Certain' },
+  { name: 'Refuge Worldwide', city: 'Berlino', type: 'Musica', link: 'https://www.instagram.com/refugeworldwide', note: 'Web radio musica elettronica', conf: 'Certain' },
+  { name: 'RSO Berlin', city: 'Berlino', type: 'Musica', link: 'https://www.instagram.com/rso.berlin', note: 'Collettivo/serate club', conf: 'Certain' },
+  { name: 'SFX Berlin', city: 'Berlino', type: 'Digital art', link: 'https://www.instagram.com/sfx_berlin', note: 'Organizzazione arte multimediale fondata da Zoe Mcpherson', conf: 'Certain' },
+  { name: 'Urbane Künste Ruhr', city: 'Bochum', type: 'Arte', link: 'https://www.instagram.com/urbanekuensteruhr', note: 'Istituzione arte pubblica/urbana nella Ruhr', conf: 'Certain' },
+  { name: 'Gewölbe', city: 'Colonia', type: 'Musica', link: 'https://www.instagram.com/gewoelbe_koeln', note: 'Club techno underground', conf: 'Certain' },
+  { name: 'Cosmo Festival', city: 'Dortmund', type: 'Musica', link: 'https://www.instagram.com/cosmo_festival', note: 'Festival musicale. Handle probabilmente corretto dopo verifica parziale (localita esatta da confermare).', conf: 'Likely' },
+  { name: 'New Now Festival / Zeche Zollverein', city: 'Essen', type: 'Digital art', link: 'https://www.instagram.com/newnow_festival', note: 'Festival musica/arte digitale in ex miniera patrimonio UNESCO. Handle corretto dopo verifica.', conf: 'Certain' },
+  { name: 'MusikZentrum', city: 'Hannover', type: 'Musica', link: 'https://www.instagram.com/musikzentrum_hannover', note: 'Centro musicale/sala concerti', conf: 'Certain' },
+  { name: 'ZiMMT', city: 'Lipsia', type: 'Musica', link: 'https://www.instagram.com/z.i.m.m.t', note: 'Centro per arte multimediale immersiva, musica e tecnologia. Handle corretto dopo verifica.', conf: 'Certain' },
+  { name: 'Hospiz', city: 'Neumarkt', type: 'Misto', link: 'https://www.instagram.com/hospiz.neumarkt', note: 'Spazio culturale/musica', conf: 'Certain' },
+  { name: 'Open Ground', city: 'Wuppertal', type: 'Musica', link: 'https://www.instagram.com/openground.club', note: 'Club musica elettronica', conf: 'Certain' },
+  { name: 'Predator', city: 'Fukuoka', type: 'Musica', link: 'https://www.instagram.com/predator_fukuoka', note: 'Club musica elettronica', conf: 'Certain' },
+  { name: 'Club Ondo', city: 'Hiroshima', type: 'Musica', link: 'https://www.instagram.com/club_ondo', note: 'Club musica elettronica', conf: 'Certain' },
+  { name: 'ROBOT Festival', city: 'Bologna', type: 'Digital art', link: 'https://www.instagram.com/robotfestival', note: 'Festival musica elettronica/arti digitali', conf: 'Certain' },
+  { name: 'Hacienda / Klang', city: 'Roma', type: 'Musica', link: 'https://www.instagram.com/hacienda.roma', note: 'Serata/collettivo al Pigneto (possibile evoluzione o serata gemella di Klang)', conf: 'Likely' },
+  { name: 'Argo16', city: 'Venezia', type: 'Arte', link: 'https://www.instagram.com/argo16_venezia', note: 'Spazio arte/eventi indipendente (Associazione Spazio Aereo). Handle corretto dopo verifica (era sbagliato).', conf: 'Certain' },
+  { name: 'Cosmo', city: 'Venezia', type: 'Musica', link: 'https://www.instagram.com/cosmo.venice', note: 'Club/collettivo musica elettronica', conf: 'Certain' },
+  { name: 'Rotondes', city: 'Lussemburgo', type: 'Misto', link: 'https://www.instagram.com/rotondes', note: 'Ex rimessa treni, ora centro culturale multidisciplinare', conf: 'Certain' },
+  { name: 'MUTEK México', city: 'Città del Messico', type: 'Digital art', link: 'https://www.instagram.com/mutekmx', note: 'Festival internazionale creativita digitale e musica elettronica', conf: 'Certain' },
+  { name: 'Ssensorial', city: 'Città del Messico', type: 'Musica', link: 'https://www.instagram.com/ssensorial.mx', note: 'Collettivo/serate musica elettronica', conf: 'Certain' },
+  { name: 'Túnel 90.9 FM', city: 'Città del Messico', type: 'Musica', link: 'https://www.instagram.com/ibero909fm', note: 'Radio universitaria, programmi musica elettronica/sperimentale', conf: 'Certain' },
+  { name: 'SPAZ Soundsystem', city: 'Mazunte', type: 'Musica', link: 'https://www.instagram.com/spaz_soundsystem', note: 'Collettivo/soundsystem musica elettronica sulla spiaggia', conf: 'Certain' },
+  { name: 'EKKO Festival', city: 'Bergen', type: 'Musica', link: 'https://www.instagram.com/ekkobergen', note: 'Festival musica elettronica/sperimentale dal 2003. Handle corretto dopo verifica.', conf: 'Certain' },
+  { name: 'Insomnia Festival', city: 'Tromsø', type: 'Musica', link: 'https://www.instagram.com/insomniatromso', note: 'Festival musica elettronica/sperimentale nell artico dal 2002. Handle corretto dopo verifica (esiste un altro Insomnia Festival in Portogallo, da non confondere).', conf: 'Certain' },
+  { name: 'Dokzaal', city: 'Amsterdam', type: 'Musica', link: 'https://www.instagram.com/dokzaal.amsterdam', note: 'Sala concerti/club', conf: 'Certain' },
+  { name: 'Dusty Cabinets', city: 'Amsterdam', type: 'Musica', link: 'https://www.instagram.com/dustycabinets', note: 'Collettivo/serate musica elettronica', conf: 'Certain' },
+  { name: 'Garage Noord', city: 'Amsterdam', type: 'Musica', link: 'https://www.instagram.com/garagenoord', note: 'Club musica elettronica sperimentale', conf: 'Certain' },
+  { name: 'Tillatec', city: 'Amsterdam', type: 'Musica', link: 'https://www.instagram.com/tillatec', note: 'Collettivo/etichetta musica elettronica', conf: 'Certain' },
+  { name: 'GOGBOT Festival', city: 'Enschede', type: 'Digital art', link: 'https://www.instagram.com/gogbot', note: 'Festival arte/tecnologia/musica', conf: 'Certain' },
+  { name: 'OOST', city: 'Groningen', type: 'Musica', link: 'https://www.instagram.com/oost.groningen', note: 'Club/spazio musica elettronica', conf: 'Certain' },
+  { name: 'Rewire Festival', city: 'LAia (Olanda)', type: 'Digital art', link: 'https://www.instagram.com/rewirefestival', note: 'Festival musica sperimentale/arti digitali', conf: 'Certain' },
+  { name: 'Noods Radio', city: 'Bristol', type: 'Musica', link: 'https://www.instagram.com/noodsradio', note: 'Web radio musica elettronica', conf: 'Certain' },
+  { name: 'Saffron Recordings', city: 'Bristol', type: 'Musica', link: 'https://www.instagram.com/saffronrecordings', note: 'Etichetta/collettivo musica elettronica', conf: 'Certain' },
+  { name: 'Corsica Studios', city: 'Londra', type: 'Musica', link: 'https://www.instagram.com/corsica.studios', note: 'Club musica elettronica underground', conf: 'Certain' },
+  { name: 'Free Mvmts', city: 'Londra', type: 'Musica', link: 'https://www.instagram.com/freemvmts', note: 'Collettivo/serate musica elettronica', conf: 'Certain' },
+  { name: 'ICA (Institute of Contemporary Arts)', city: 'Londra', type: 'Arte', link: 'https://www.instagram.com/icalondon', note: 'Istituto arte contemporanea dal 1946, eventi multidisciplinari. Handle corretto dopo verifica.', conf: 'Certain' },
+  { name: 'Stone Nest', city: 'Londra', type: 'Misto', link: 'https://www.instagram.com/stonenest.london', note: 'Ex chiesa riconvertita in spazio arte/musica', conf: 'Certain' },
+  { name: 'Venue MOT', city: 'Londra', type: 'Arte', link: 'https://www.instagram.com/venuemot', note: 'Spazio arte contemporanea', conf: 'Certain' },
+  { name: 'The White Hotel', city: 'Manchester', type: 'Musica', link: 'https://www.instagram.com/m3_7lw', note: 'Storico club underground a Salford dal 2015, CHIUSURA ANNUNCIATA per inizio 2027. Handle corretto dopo verifica (era sbagliato).', conf: 'Certain' },
+  { name: 'Fuchs2', city: 'Praga', type: 'Musica', link: 'https://www.instagram.com/fuchs2stvanice', note: 'Venue musica avventurosa su un isola nel centro di Praga, legato a Creepy Teepee Festival. Handle corretto dopo verifica (era sbagliato).', conf: 'Certain' },
+  { name: 'Synth Library Prague', city: 'Praga', type: 'Musica', link: 'https://www.instagram.com/synthlibraryprague', note: 'Collezione/collettivo dedicato ai synth, eventi', conf: 'Certain' },
+  { name: 'Razzmatazz', city: 'Barcellona', type: 'Musica', link: 'https://www.instagram.com/razzmatazzclubs', note: 'Storico club multi-sala dal 2000, 5 sale, capacita 2100+. Handle corretto dopo verifica (era sbagliato).', conf: 'Certain' },
+  { name: 'L.E.V. Festival', city: 'Gijón', type: 'Digital art', link: 'https://www.instagram.com/levfestival', note: 'Festival musica elettronica/arti audiovisive', conf: 'Certain' },
+  { name: 'Curtocircuíto', city: 'Santiago de Compostela', type: 'Arte', link: 'https://www.instagram.com/curtocircuito_festival', note: 'Festival internazionale di cortometraggi, con sezione musica/arte. Handle corretto dopo verifica.', conf: 'Certain' },
+  { name: 'Intonal Festival', city: 'Malmö', type: 'Musica', link: 'https://www.instagram.com/intonalfestival', note: 'Festival musica elettronica sperimentale (gia in Festival della lista originale)', conf: 'Certain' },
+  { name: 'PLX', city: 'Malmö', type: 'Musica', link: 'https://www.instagram.com/plxplxplx', note: 'Collettivo/festival musica elettronica. Handle corretto dopo verifica.', conf: 'Certain' },
+  { name: 'Norbergfestival', city: 'Norberg', type: 'Musica', link: 'https://www.instagram.com/norbergfestival', note: 'Festival techno/elettronica sperimentale in un ex villaggio minerario', conf: 'Certain' },
+  { name: 'TraTra Festival', city: 'Basilea', type: 'Musica', link: 'https://www.instagram.com/tratrafestival', note: 'Festival musica elettronica/sperimentale', conf: 'Certain' },
+  { name: 'Dachstock', city: 'Berna', type: 'Musica', link: 'https://www.instagram.com/dachstock_reitschule', note: 'Sala concerti nella Reitschule. Handle corretto dopo verifica.', conf: 'Certain' },
+  { name: 'The Sound Dome (Zene Háza)', city: 'Budapest', type: 'Musica', link: 'https://www.instagram.com/zenehazabp', note: 'Sala concerti/istituzione musicale', conf: 'Certain' },
+
+  // Confermate dopo verifica di correzioni suggerite
+  { name: 'Unlocked', city: 'Barcellona', type: 'Musica', link: 'https://www.instagram.com/unlocked_bcn', note: 'Serate hard techno/hard groove dal 2020 (era nella lista come "Unlocked_bcn")', conf: 'Certain' },
+  { name: 'Casa dels Contes', city: 'Barcellona', type: 'Arte', link: 'https://www.instagram.com/casadelscontes', note: 'Piccolo teatro a Gràcia: spettacoli, concerti, magia, burattini', conf: 'Certain' },
+  { name: 'Valkiria Hub Space', city: 'Barcellona', type: 'Misto', link: 'https://www.instagram.com/valkiriahubspace', note: 'Sale eventi multifunzionali a Poblenou (possibile evoluzione di "Valkiria IFF")', conf: 'Certain' },
+  { name: 'Den Anden Side', city: 'Copenhagen', type: 'Musica', link: 'https://www.instagram.com/den_anden_side_cph', note: 'Club electronic community-based, successore di Ved Siden Af (chiuso)', conf: 'Certain' },
+  { name: 'Creepy Teepee Festival', city: 'Praga', type: 'Musica', link: 'https://www.instagram.com/creepyteepeefestival', note: 'Festival artist-run dal 2009 (ex Kutná Hora, dal 2026 a Praga su Štvanice Island, legato al club Fuchs2)', conf: 'Certain' },
+  { name: 'Shotgun Festival', city: 'Hrádek nad Nisou', type: 'Musica', link: 'https://www.instagram.com/shtgnfestival', note: 'Festival techno/hardgroove/bass dove si incontrano Cechia, Germania e Polonia. Handle fornito dall\'utente e verificato.', conf: 'Certain' },
+  { name: "L'Envers", city: 'Marrakech', type: 'Musica', link: 'https://www.instagram.com/lenversmarrakech', note: 'Bar electro di riferimento a Guéliz dal 2017, usato anche per prenotazioni via DM', conf: 'Certain' },
+  { name: "Faktory'z", city: 'Marrakech', type: 'Musica', link: 'https://www.instagram.com/faktoryzmarrakech', note: 'Locale party latino-marocchino con DJ set', conf: 'Certain' },
+  { name: 'Atlas Electronic', city: 'Marrakech', type: 'Musica', link: 'https://www.instagram.com/atlaselectronic', note: 'Festival musicale marocchino-olandese annuale, musica underground e collaborazioni cross-culturali', conf: 'Certain' },
+  { name: 'Harvest Festival Marrakech', city: 'Marrakech', type: 'Musica', link: 'https://www.instagram.com/harvest_marrakech', note: 'Festival che porta in scena progetti come Tekchbila (musica elettronica + amazigh), prossima edizione ottobre 2026', conf: 'Certain' },
+  { name: 'Meydene', city: 'Marrakech', type: 'Arte', link: 'https://www.instagram.com/meydene.marrakech', note: 'Spazio immersivo/teatro su M-Avenue, ospita concerti ed eventi culturali (es. Tekchbila)', conf: 'Certain' }
+];
+
+let customProfiles = [];
+let deletedSeedLinks = [];
+let linkEdits = {};
+
+function rebuildProfiles() {
+  const seedPart = seedProfiles
+    .filter(p => !deletedSeedLinks.includes(p.link))
+    .map(p => {
+      const edited = linkEdits[p.link];
+      return Object.assign({}, p, { link: edited || p.link, _origLink: p.link, _custom: false });
+    });
+  const customPart = customProfiles.map((p, i) => Object.assign({}, p, { _custom: true, _customIndex: i }));
+  profiles = seedPart.concat(customPart);
+}
+
+rebuildProfiles();
+renderCityFilter();
+renderList();
+renderNotFound();
+renderFestivals();
+renderChina();
+
+async function tryLoadRemoteSeed() {
+  const statusEl = document.getElementById('sync-status');
+  if (!REMOTE_DATA_URL) return;
+  try {
+    const res = await fetch(REMOTE_DATA_URL, { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const csvText = await res.text();
+    const parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true });
+    const remoteProfiles = parsed.data
+      .filter(r => r.name && r.link)
+      .map(r => ({
+        name: r.name, city: r.city, type: r.type,
+        link: r.link, note: r.note, conf: r.conf
+      }));
+    if (remoteProfiles.length > 0) {
+      seedProfiles.length = 0;
+      seedProfiles.push(...remoteProfiles);
+      if (statusEl) statusEl.textContent = '// dati aggiornati da Google Sheet (' + remoteProfiles.length + ' profili)';
+    }
+  } catch (e) {
+    if (statusEl) statusEl.textContent = '// nessuna connessione a Google Sheet, uso i dati salvati nel file';
+  }
+}
+
+async function loadProfiles() {
+  await tryLoadRemoteSeed();
+
+  let cp = null;
+  try {
+    cp = await storage.get('customProfiles');
+    customProfiles = cp ? JSON.parse(cp.value) : [];
+  } catch (e) { customProfiles = []; }
+  try {
+    const dl = await storage.get('deletedSeedLinks');
+    deletedSeedLinks = dl ? JSON.parse(dl.value) : [];
+  } catch (e) { deletedSeedLinks = []; }
+  try {
+    const le = await storage.get('linkEdits');
+    linkEdits = le ? JSON.parse(le.value) : {};
+  } catch (e) { linkEdits = {}; }
+
+  // Migrazione una tantum da vecchio formato 'profiles' (versione precedente dello storage)
+  if (!cp) {
+    try {
+      const old = await storage.get('profiles');
+      if (old) {
+        const oldArr = JSON.parse(old.value);
+        const oldLinks = new Set(oldArr.map(p => p.link));
+        const seedLinks = new Set(seedProfiles.map(p => p.link));
+        customProfiles = oldArr.filter(p => !seedLinks.has(p.link));
+        deletedSeedLinks = seedProfiles.filter(p => !oldLinks.has(p.link)).map(p => p.link);
+        await storage.set('customProfiles', JSON.stringify(customProfiles));
+        await storage.set('deletedSeedLinks', JSON.stringify(deletedSeedLinks));
+      }
+    } catch (e) {}
+  }
+
+  rebuildProfiles();
+  renderCityFilter();
+  renderList();
+  renderFestivals();
+}
+
+async function persistCustom() {
+  try { await storage.set('customProfiles', JSON.stringify(customProfiles)); } catch (e) {}
+}
+async function persistDeleted() {
+  try { await storage.set('deletedSeedLinks', JSON.stringify(deletedSeedLinks)); } catch (e) {}
+}
+async function persistEdits() {
+  try { await storage.set('linkEdits', JSON.stringify(linkEdits)); } catch (e) {}
+}
+
+function renderCityFilter() {
+  const panel = document.getElementById('city-filter-panel');
+  const cities = [...new Set(profiles.map(p => p.city))];
+  const groups = {};
+  cities.forEach(c => {
+    const country = countryOf(c);
+    if (!groups[country]) groups[country] = [];
+    groups[country].push(c);
+  });
+  const countryOrder = Object.keys(groups).filter(c => c !== '__tour__').sort();
+  let html = `<div class="radar-dropdown-item all" onclick="selectCity('__all__')">-- tutte le città --</div>`;
+  if (groups['__tour__']) {
+    html += `<div class="radar-dropdown-group">TOUR</div>`;
+    html += `<div class="radar-dropdown-item" onclick="selectCity('Tour da verificare')">Tour da verificare</div>`;
+  }
+  countryOrder.forEach(country => {
+    const citiesInCountry = groups[country].sort();
+    html += `<div class="radar-dropdown-group">${escapeHtml(country)}</div>`;
+    citiesInCountry.forEach(c => {
+      html += `<div class="radar-dropdown-item" onclick="selectCity('${escapeHtml(c).replace(/'/g, "\\'")}')">${escapeHtml(c)}</div>`;
+    });
+  });
+  panel.innerHTML = html;
+  if (!cities.includes(selectedCity) && selectedCity !== '__all__') {
+    selectedCity = '__all__';
+  }
+  updateCityFilterLabel();
+}
+
+function updateCityFilterLabel() {
+  document.getElementById('city-filter-label').textContent =
+    selectedCity === '__all__' ? '-- tutte le città --' : selectedCity;
+}
+
+function toggleCityDropdown() {
+  document.getElementById('city-filter-panel').classList.toggle('open');
+}
+
+function selectCity(city) {
+  selectedCity = city;
+  updateCityFilterLabel();
+  document.getElementById('city-filter-panel').classList.remove('open');
+  renderList();
+}
+
+document.addEventListener('click', function(e) {
+  const dropdown = document.querySelector('.radar-dropdown');
+  if (dropdown && !dropdown.contains(e.target)) {
+    document.getElementById('city-filter-panel').classList.remove('open');
+  }
+});
+
+function cardHtml(p, realIdx) {
+  const cc = confColors[p.conf] || confColors.Guessing;
+  const tc = typeColors[p.type] || typeColors.Misto;
+  const isPendingDelete = confirmDeleteIdx === realIdx;
+  const isEditing = editingIdx === realIdx;
+  return `
+    <div class="radar-card" oncontextmenu="return false;"
+         onpointerdown="startLongPress(${realIdx})"
+         onpointerup="cancelLongPress()"
+         onpointerleave="cancelLongPress()"
+         onpointermove="cancelLongPress()">
+      <div style="display:flex; justify-content:space-between; align-items:start;">
+        <div>
+          <a href="${escapeHtml(p.link)}" onclick="return handleNameClick(event)" style="font-weight:bold; font-size:15px; text-decoration:none;">${escapeHtml(p.name)}</a>
+          <p style="font-size:12px; color:#8ab4ff; margin:2px 0 0;">${escapeHtml(p.city)}</p>
+        </div>
+        <button aria-label="Elimina profilo" onclick="requestDelete(${realIdx})" style="border:none; background:none; padding:4px; cursor:pointer; color:#5a6a8a; font-family:inherit;">
+          [x]
+        </button>
+      </div>
+      <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">
+        <span class="radar-badge" style="background:${tc.bg}; color:${tc.text};">${escapeHtml(p.type)}</span>
+        <span class="radar-badge" style="background:${cc.bg}; color:${cc.text};">${escapeHtml(p.conf)}</span>
+      </div>
+      ${p.note ? `<p style="font-size:13px; color:#a0a0a0; margin:8px 0 0;">${escapeHtml(p.note)}</p>` : ''}
+      ${isPendingDelete ? `
+      <div class="radar-confirm-bar">
+        <span style="font-size:12px; color:#ff5d5d; flex:1;">eliminare "${escapeHtml(p.name)}"?</span>
+        <button class="radar-btn danger" onclick="confirmDelete(${realIdx})">sì, elimina</button>
+        <button class="radar-btn" onclick="cancelDelete()">annulla</button>
+      </div>` : ''}
+      ${isEditing ? `
+      <div class="radar-confirm-bar" style="flex-direction:column; align-items:stretch;">
+        <span style="font-size:12px; color:#ffd60a;">modifica link instagram:</span>
+        <input id="edit-link-${realIdx}" value="${escapeHtml(p.link)}" style="margin:6px 0;">
+        <div style="display:flex; gap:8px;">
+          <button class="radar-btn" onclick="saveLinkEdit(${realIdx})" style="flex:1;">salva</button>
+          <button class="radar-btn danger" onclick="cancelLinkEdit()" style="flex:1;">annulla</button>
+        </div>
+      </div>` : ''}
+    </div>`;
+}
+
+function startLongPress(idx) {
+  cancelLongPress();
+  longPressTimer = setTimeout(() => {
+    longPressTimer = null;
+    suppressNextClick = true;
+    editingIdx = idx;
+    confirmDeleteIdx = null;
+    renderList();
+    renderFestivals();
+    setTimeout(() => {
+      const inp = document.getElementById('edit-link-' + idx);
+      if (inp) { inp.focus(); inp.select(); }
+    }, 50);
+  }, 550);
+}
+
+function cancelLongPress() {
+  if (longPressTimer) {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+  }
+}
+
+function handleNameClick(event) {
+  if (suppressNextClick) {
+    suppressNextClick = false;
+    event.preventDefault();
+    return false;
+  }
+  return true;
+}
+
+async function saveLinkEdit(idx) {
+  const inp = document.getElementById('edit-link-' + idx);
+  let newLink = inp.value.trim();
+  if (!newLink) return;
+  if (!/^https?:\/\//i.test(newLink)) newLink = 'https://' + newLink;
+  const p = profiles[idx];
+  if (p._custom) {
+    customProfiles[p._customIndex].link = newLink;
+    await persistCustom();
+  } else {
+    linkEdits[p._origLink] = newLink;
+    await persistEdits();
+  }
+  editingIdx = null;
+  rebuildProfiles();
+  renderList();
+  renderFestivals();
+}
+
+function cancelLinkEdit() {
+  editingIdx = null;
+  renderList();
+  renderFestivals();
+}
+
+function renderList() {
+  const list = document.getElementById('list');
+  const sel = selectedCity;
+  const tourOnly = document.getElementById('tour-only').checked;
+  let filtered = sel === '__all__' ? profiles : profiles.filter(p => p.city === sel);
+  if (tourOnly) filtered = filtered.filter(p => p.type === 'Tour artista');
+  if (filtered.length === 0) {
+    list.innerHTML = '<p style="color:#5a6a8a; font-size:14px;">// nessun profilo salvato. passa a "aggiungi" per crearne uno.</p>';
+    return;
+  }
+  list.innerHTML = filtered.map((p) => cardHtml(p, profiles.indexOf(p))).join('');
+}
+
+function renderFestivals() {
+  const el = document.getElementById('fest-list');
+  const festivals = profiles.filter(isFestival);
+  const groups = {};
+  festivals.forEach(p => {
+    const country = countryOf(p.city);
+    if (!groups[country]) groups[country] = [];
+    groups[country].push(p);
+  });
+  const countries = Object.keys(groups).sort();
+  let html = '';
+  countries.forEach(country => {
+    html += `<div class="radar-country-header">${escapeHtml(country === '__tour__' ? 'TOUR' : country)}</div>`;
+    groups[country].forEach(p => {
+      html += cardHtml(p, profiles.indexOf(p));
+    });
+  });
+  el.innerHTML = html || '<p style="color:#5a6a8a; font-size:14px;">// nessun festival trovato.</p>';
+}
+
+function renderChina() {
+  const el = document.getElementById('cn-list');
+  el.innerHTML = chinaArticles.map(a => `
+    <div class="radar-card">
+      <a href="${escapeHtml(a.url)}" style="font-weight:bold; font-size:15px; text-decoration:none;">${escapeHtml(a.title)}</a>
+      <p style="font-size:12px; color:#8ab4ff; margin:4px 0 0;">${escapeHtml(a.source)}</p>
+      <p style="font-size:13px; color:#a0a0a0; margin:8px 0 0;">${escapeHtml(a.note)}</p>
+    </div>`).join('') || '<p style="color:#5a6a8a; font-size:14px;">// nessun articolo ancora. mandami un link.</p>';
+}
+
+function renderNotFound() {
+  const el = document.getElementById('nf-list');
+  const groups = {};
+  notFoundList.forEach(p => {
+    if (!groups[p.country]) groups[p.country] = [];
+    groups[p.country].push(p);
+  });
+  const countries = Object.keys(groups).sort();
+  let html = '';
+  countries.forEach(country => {
+    html += `<div class="radar-country-header">${escapeHtml(country)}</div>`;
+    groups[country].forEach(p => {
+      html += `
+      <div class="radar-card notfound">
+        <p style="font-weight:bold; font-size:14px; margin:0;">${escapeHtml(p.name)}</p>
+        <p style="font-size:12px; color:#8ab4ff; margin:2px 0 6px;">${escapeHtml(p.city)}</p>
+        <p style="font-size:12px; color:#5a6a8a; margin:0;">// ${escapeHtml(p.note)}</p>
+      </div>`;
+    });
+  });
+  el.innerHTML = html;
+}
+
+function switchTab(tab) {
+  document.getElementById('tab-view').classList.toggle('active', tab === 'view');
+  document.getElementById('tab-fest').classList.toggle('active', tab === 'fest');
+  document.getElementById('tab-cn').classList.toggle('active', tab === 'cn');
+  document.getElementById('tab-add').classList.toggle('active', tab === 'add');
+  document.getElementById('tab-nf').classList.toggle('active', tab === 'nf');
+  document.getElementById('view-panel').style.display = tab === 'view' ? 'block' : 'none';
+  document.getElementById('fest-panel').style.display = tab === 'fest' ? 'block' : 'none';
+  document.getElementById('cn-panel').style.display = tab === 'cn' ? 'block' : 'none';
+  document.getElementById('add-panel').style.display = tab === 'add' ? 'block' : 'none';
+  document.getElementById('nf-panel').style.display = tab === 'nf' ? 'block' : 'none';
+  if (tab === 'fest') renderFestivals();
+}
+
+async function addProfile() {
+  const name = document.getElementById('f-name').value.trim();
+  const city = document.getElementById('f-city').value.trim();
+  const country = document.getElementById('f-country').value.trim();
+  const type = document.getElementById('f-type').value;
+  const link = document.getElementById('f-link').value.trim();
+  const note = document.getElementById('f-note').value.trim();
+  const conf = document.getElementById('f-conf').value;
+  const err = document.getElementById('f-error');
+
+  if (!name || !city || !link) {
+    err.textContent = 'compila almeno nome, città e link.';
+    err.style.display = 'block';
+    return;
+  }
+  err.style.display = 'none';
+
+  if (country) cityCountry[city] = country;
+
+  customProfiles.push({ name, city, type, link, note, conf });
+  try {
+    await persistCustom();
+  } catch (e) {
+    err.textContent = 'errore nel salvataggio, riprova.';
+    err.style.display = 'block';
+    return;
+  }
+  rebuildProfiles();
+
+  document.getElementById('f-name').value = '';
+  document.getElementById('f-city').value = '';
+  document.getElementById('f-country').value = '';
+  document.getElementById('f-link').value = '';
+  document.getElementById('f-note').value = '';
+
+  renderCityFilter();
+  renderList();
+  renderFestivals();
+  switchTab('view');
+}
+
+function requestDelete(idx) {
+  confirmDeleteIdx = idx;
+  renderList();
+  renderFestivals();
+}
+
+function cancelDelete() {
+  confirmDeleteIdx = null;
+  renderList();
+  renderFestivals();
+}
+
+async function confirmDelete(idx) {
+  const p = profiles[idx];
+  if (p._custom) {
+    customProfiles.splice(p._customIndex, 1);
+    await persistCustom();
+  } else {
+    deletedSeedLinks.push(p._origLink);
+    await persistDeleted();
+  }
+  confirmDeleteIdx = null;
+  rebuildProfiles();
+  renderCityFilter();
+  renderList();
+  renderFestivals();
+}
+
+function escapeHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+loadProfiles();
+</script>
