@@ -1,3 +1,9 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<title>Radar Eventi</title>
 <style>
   html, body { margin: 0; min-height: 100%; background: #0a0e27; }
   .radar {
@@ -94,6 +100,8 @@
     color: #ffd60a; font-weight: bold; border-bottom: 1px solid #1e2a4a;
   }
 </style>
+</head>
+<body>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <div class="radar">
   <h2 class="sr-only">Radar Eventi</h2>
@@ -724,6 +732,10 @@ async function tryLoadRemoteSeed() {
     const res = await fetch(REMOTE_DATA_URL, { cache: 'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const csvText = await res.text();
+    if (!csvText || csvText.trim().length === 0) {
+      if (statusEl) statusEl.textContent = '// Google Sheet raggiunto ma risposta vuota, uso i dati salvati nel file';
+      return;
+    }
     const parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true });
     const remoteProfiles = parsed.data
       .filter(r => r.name && r.link)
@@ -735,9 +747,11 @@ async function tryLoadRemoteSeed() {
       seedProfiles.length = 0;
       seedProfiles.push(...remoteProfiles);
       if (statusEl) statusEl.textContent = '// dati aggiornati da Google Sheet (' + remoteProfiles.length + ' profili)';
+    } else {
+      if (statusEl) statusEl.textContent = '// Google Sheet raggiunto (' + csvText.length + ' caratteri) ma 0 righe valide, uso i dati salvati nel file. Colonne trovate: ' + (parsed.meta && parsed.meta.fields ? parsed.meta.fields.join(', ') : 'nessuna');
     }
   } catch (e) {
-    if (statusEl) statusEl.textContent = '// nessuna connessione a Google Sheet, uso i dati salvati nel file';
+    if (statusEl) statusEl.textContent = '// errore di connessione a Google Sheet (' + e.message + '), uso i dati salvati nel file';
   }
 }
 
@@ -1099,3 +1113,5 @@ function escapeHtml(str) {
 
 loadProfiles();
 </script>
+</body>
+</html>
