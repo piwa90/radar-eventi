@@ -17,3 +17,14 @@
 [artisti] count=1 ok=true raw_preview={"ok":true,"result":[{"update_id":898298696,
 "message":{"message_id":8,"from":{"id":8779360785,"is_bot":false,"first_name":"bob","username":"weah619","language_code":"en"},"chat":{"id":8779360785,"fir
 [artisti] NEW_TEXT_LINES=["2026-08-30T21:40:48Z","#artista schifezza"]
+[eventi] lunghezza token: 46
+[eventi] count=1 ok=true raw_preview={"ok":true,"result":[{"update_id":230896405,
+"message":{"message_id":12,"from":{"id":8779360785,"is_bot":false,"first_name":"bob","username":"weah619","language_code":"en"},"chat":{"id":8779360785,"fi
+[eventi] NEW_TEXT_LINES=["2026-08-30T21:47:26Z","https://www.instagram.com/criticalmass.space?igsi=bmU0eDM5NzhmMGhk"]
+[artisti] lunghezza token: 46
+[artisti] count=5 ok=true raw_preview={"ok":true,"result":[{"update_id":898298697,
+"message":{"message_id":9,"from":{"id":8779360785,"is_bot":false,"first_name":"bob","username":"weah619","language_code":"en"},"chat":{"id":8779360785,"fir
+[artisti] NEW_TEXT_LINES=["2026-08-30T21:47:26Z","#artista bob:
+https://www.instagram.com/tapas_changyang?igsi=MXh4aTRubW1qdWVzcw==
+
+https://www.instagram.com/hajime.kutsuwada?igsi=MWtncWtobjJzNXJ3cA=="]

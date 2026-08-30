@@ -32,3 +32,59 @@ target=data.csv | risposta grezza: [
 target=artisti-visual.csv | risposta grezza: []
 --- run: chiave presente=True, lunghezza=53, modello=gemini-3.6-flash
 target=artisti-visual.csv | risposta grezza: []
+--- run: chiave presente=True, lunghezza=53, modello=gemini-3.6-flash
+target=data.csv | api_ok=True | risposta grezza: [{"name":"Critical Mass Space","city":"","country":"","type":"Misto","handle":"criticalmass.space","note":"Spazio culturale o collettivo"}]
+target=artisti-visual.csv | api_ok=True | risposta grezza: [{"name":"Tapas Changyang","city":"","country":"","type":"Digital art","handle":"@tapas_changyang","note":"Artista digitale e 3D"},{"name":"Hajime Kutsuwada","city":"","country":"","type":"Digital art","handle":"@hajime.kutsuwada","note":"Artista digitale e generativo"}]
+target=artisti-visual.csv | api_ok=True | risposta grezza: [
+  {
+    "name": "John Also Bennett",
+    "city": "",
+    "country": "",
+    "type": "Audiovisual",
+    "handle": "",
+    "note": "Musico e sound artist per la sessione di ascolto notturna Dazin Dazeto"
+  },
+  {
+    "name": "Marco Billi",
+    "city": "",
+    "country": "",
+    "type": "Audiovisual",
+    "handle": "",
+    "note": "Sound artist per la sessione di ascolto notturna Dazin Dazeto"
+  },
+target=artisti-visual.csv | api_ok=True | risposta grezza: [{"name":"Mümün Keser","city":"Amsterdam","country":"Netherlands","type":"Digital art","handle":"mmnksr","note":"Architectural designer creating dystopian and utopian digital art and 3D architectural visualizations."}]
+target=artisti-visual.csv | api_ok=True | risposta grezza: [
+  {
+    "name": "Lumus Instruments",
+    "city": "",
+    "country": "",
+    "type": "New media",
+    "handle": "@lumus.instruments",
+    "note": "Installazioni luminose e arti audiovisive"
+  },
+  {
+    "name": "Boris Acket",
+    "city": "",
+    "country": "",
+    "type": "New media",
+    "handle": "@boris.acket",
+    "note": "Artista contemporaneo e installazioni audiovisive"
+  },
+  {
+    "name"
+target=artisti-visual.csv | api_ok=True | risposta grezza: [
+  {
+    "name": "CLAY",
+    "city": "Berlin",
+    "country": "Germany",
+    "type": "Audiovisual",
+    "handle": "@vjopenlab",
+    "note": "Laboratorio e collettivo dedicato a live visual e VJing"
+  },
+  {
+    "name": "School of Machines, Making, and Make-Believe",
+    "city": "Berlin",
+    "country": "Germany",
+    "type": "New media",
+    "handle": "@schoolofma",
+    "note": "Organizzazione e 
