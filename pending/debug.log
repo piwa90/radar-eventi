@@ -88,3 +88,27 @@ target=artisti-visual.csv | api_ok=True | risposta grezza: [
     "type": "New media",
     "handle": "@schoolofma",
     "note": "Organizzazione e 
+--- run: chiave presente=True, lunghezza=53, modello=gemini-3.6-flash
+target=data.csv | api_ok=True | risposta grezza: []
+target=data.csv | api_ok=True | risposta grezza: [{"name":"Circolo Cascina Cappuccina","city":"","country":"","type":"Misto","handle":"@circolocascinacappuccina","note":"Spazio culturale e circolo per eventi"}]
+target=artisti-visual.csv | api_ok=True | risposta grezza: [
+  {
+    "name": "Alain Thibault",
+    "city": "",
+    "country": "",
+    "type": "Audiovisual",
+    "handle": "@alain_thibault",
+    "note": "Artist performing at WeSA x ELEKTRA AI-SCAPE"
+  },
+  {
+    "name": "Matthew Biederman",
+    "city": "",
+    "country": "",
+    "type": "Audiovisual",
+    "handle": "@matthewbiederman",
+    "note": "Artist performing at WeSA x ELEKTRA AI-SCAPE"
+  },
+  {
+   
+Errore Gemini: TimeoutError: The read operation timed out
+target=artisti-visual.csv | api_ok=False | risposta grezza: None
