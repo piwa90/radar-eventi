@@ -8,3 +8,5 @@ Errore Gemini HTTP 404: {
 }
 
 risposta grezza: None
+--- run: chiave presente=True, lunghezza=53, prefisso=AQ.Ab8, modello=gemini-3.6-flash
+risposta grezza: [{"name":"Tresor","city":"Berlino","country":"Germania","type":"Musica","handle":"@tresorberlin","note":"Club techno storico"}]
