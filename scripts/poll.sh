@@ -60,9 +60,12 @@ poll_bot() {
     | [(now | strftime("%Y-%m-%dT%H:%M:%SZ")), ($prefix + .message.text)]
     | @csv
   ')
+  echo "[$BOT_LABEL] NEW_TEXT_LINES=[${NEW_TEXT_LINES}]" >> pending/poll_debug.log
   if [ -n "$NEW_TEXT_LINES" ]; then
     echo "$NEW_TEXT_LINES" >> "$PENDING_FILE"
     echo "[$BOT_LABEL] aggiunti messaggi di testo"
+  else
+    echo "[$BOT_LABEL] NEW_TEXT_LINES vuoto" >> pending/poll_debug.log
   fi
 
   local PHOTO_UPDATE_IDS
