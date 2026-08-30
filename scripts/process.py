@@ -6,7 +6,7 @@ e aggiunge le righe risultanti a data.csv marcate come Guessing.
 import os, csv, json, base64, urllib.request, urllib.error, sys, re
 
 GEMINI_KEY = os.environ.get('GEMINI_API_KEY', '')
-MODEL = 'gemini-2.0-flash'
+MODEL = 'gemini-3.6-flash'
 API_URL = f'https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent'
 
 PENDING = 'pending.csv'
