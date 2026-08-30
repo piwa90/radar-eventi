@@ -1,0 +1,29 @@
+name: Telegram Poll
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Poll Telegram and update pending.csv
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+        run: bash scripts/poll.sh
+
+      - name: Commit changes if any
+        run: |
+          git config user.name "radar-bot"
+          git config user.email "radar-bot@users.noreply.github.com"
+          git add pending.csv pending/tg_offset.txt
+          git diff --staged --quiet && echo "Nessuna modifica" || git commit -m "Aggiornamento coda Telegram"
+          git push
