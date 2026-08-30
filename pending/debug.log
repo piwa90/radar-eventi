@@ -1,0 +1,2 @@
+--- run: chiave presente=True, lunghezza=53, modello=gemini-3.6-flash
+target=artisti-visual.csv | risposta grezza: [{"name":"Refik Anadol","city":"Los Angeles","country":"","type":"Digital art","handle":"@refikanadol","note":"Artista media e AI"}]
