@@ -7,7 +7,7 @@ import os, csv, json, base64, urllib.request, urllib.error, sys, re
 
 GEMINI_KEY = os.environ.get('GEMINI_API_KEY', '')
 MODEL = 'gemini-2.0-flash'
-API_URL = f'https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent?key={GEMINI_KEY}'
+API_URL = f'https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent'
 
 PENDING = 'pending.csv'
 DATA = 'data.csv'
@@ -26,6 +26,10 @@ Rispondi SOLO con un array JSON, senza testo prima o dopo, senza markdown. Forma
 
 Se non trovi nulla di rilevante, rispondi: []"""
 
+def log_debug(msg):
+    with open('pending/debug.log', 'a', encoding='utf-8') as f:
+        f.write(msg + '\n')
+
 def call_gemini(parts):
     body = {
         "contents": [{"parts": parts}],
@@ -34,17 +38,21 @@ def call_gemini(parts):
     req = urllib.request.Request(
         API_URL,
         data=json.dumps(body).encode('utf-8'),
-        headers={'Content-Type': 'application/json'}
+        headers={'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_KEY}
     )
     try:
         with urllib.request.urlopen(req, timeout=60) as r:
             resp = json.load(r)
         return resp['candidates'][0]['content']['parts'][0]['text']
     except urllib.error.HTTPError as e:
-        print(f"Errore Gemini HTTP {e.code}: {e.read().decode()[:300]}")
+        msg = f"Errore Gemini HTTP {e.code}: {e.read().decode()[:500]}"
+        print(msg)
+        log_debug(msg)
         return None
     except Exception as e:
-        print(f"Errore Gemini: {e}")
+        msg = f"Errore Gemini: {type(e).__name__}: {e}"
+        print(msg)
+        log_debug(msg)
         return None
 
 def parse_json_response(text):
@@ -58,8 +66,11 @@ def parse_json_response(text):
         return []
 
 def main():
+    os.makedirs('pending', exist_ok=True)
+    log_debug(f"--- run: chiave presente={bool(GEMINI_KEY)}, lunghezza={len(GEMINI_KEY)}, prefisso={GEMINI_KEY[:6] if GEMINI_KEY else 'N/A'}, modello={MODEL}")
     if not GEMINI_KEY:
         print("GEMINI_API_KEY mancante, esco.")
+        log_debug("CHIAVE MANCANTE")
         return
     if not os.path.exists(PENDING):
         print("Nessun pending.csv")
@@ -93,6 +104,7 @@ def main():
             parts.append({"text": PROMPT + f"\n\nContenuto da analizzare:\n{text}"})
 
         result = call_gemini(parts)
+        log_debug(f"risposta grezza: {str(result)[:400]}")
         items = parse_json_response(result)
         print(f"  -> estratte {len(items)} entita da: {text[:60]}")
         extracted.extend(items)
