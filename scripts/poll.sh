@@ -26,6 +26,7 @@ poll_bot() {
     OFFSET=0
   fi
   echo "[$BOT_LABEL] offset attuale: $OFFSET"
+  echo "[$BOT_LABEL] lunghezza token: ${#BOT_TOKEN}" >> pending/poll_debug.log
 
   local RESPONSE
   RESPONSE=$(curl -s "https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${OFFSET}&timeout=0")
@@ -34,12 +35,14 @@ poll_bot() {
   OK=$(echo "$RESPONSE" | jq -r '.ok')
   if [ "$OK" != "true" ]; then
     echo "[$BOT_LABEL] errore da Telegram: $RESPONSE"
+    echo "[$BOT_LABEL] RAW: $RESPONSE" >> pending/poll_debug.log
     return 0
   fi
 
   local COUNT
   COUNT=$(echo "$RESPONSE" | jq '.result | length')
   echo "[$BOT_LABEL] aggiornamenti ricevuti: $COUNT"
+  echo "[$BOT_LABEL] count=$COUNT ok=$OK raw_preview=${RESPONSE:0:200}" >> pending/poll_debug.log
 
   if [ "$COUNT" -eq 0 ]; then
     echo "[$BOT_LABEL] nessun nuovo messaggio."
