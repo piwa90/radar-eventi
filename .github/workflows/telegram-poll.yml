@@ -34,7 +34,7 @@ jobs:
           [ -f pending.csv ] || echo "timestamp,text" > pending.csv
           git config user.name "radar-bot"
           git config user.email "radar-bot@users.noreply.github.com"
-          git add pending.csv pending/tg_offset.txt pending/tg_offset_artisti.txt pending/images/ data.csv artisti-visual.csv pending/debug.log
+          git add pending.csv pending/tg_offset.txt pending/tg_offset_artisti.txt pending/images/ data.csv artisti-visual.csv pending/debug.log pending/poll_debug.log
           if git diff --staged --quiet; then
             echo "Nessuna modifica da salvare"
           else
