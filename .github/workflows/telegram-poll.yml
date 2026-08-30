@@ -20,6 +20,11 @@ jobs:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
         run: bash scripts/poll.sh
 
+      - name: Process queue with Gemini
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python3 scripts/process.py
+
       - name: Commit changes if any
         run: |
           mkdir -p pending/images
@@ -27,10 +32,10 @@ jobs:
           [ -f pending.csv ] || echo "timestamp,text" > pending.csv
           git config user.name "radar-bot"
           git config user.email "radar-bot@users.noreply.github.com"
-          git add pending.csv pending/tg_offset.txt pending/images/
+          git add pending.csv pending/tg_offset.txt pending/images/ data.csv
           if git diff --staged --quiet; then
             echo "Nessuna modifica da salvare"
           else
-            git commit -m "Aggiornamento coda Telegram"
+            git commit -m "Aggiornamento automatico da Telegram"
             git push
           fi
