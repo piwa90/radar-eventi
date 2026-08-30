@@ -26,3 +26,4 @@ target=data.csv | risposta grezza: [
     "handle": "",
     "note": "Spazio culturale e sede dell'evento a Venezia"
   
+--- run: chiave presente=True, lunghezza=53, modello=gemini-3.6-flash
