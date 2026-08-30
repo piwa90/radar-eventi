@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 Legge pending.csv, manda ogni voce a Gemini per l'estrazione strutturata,
-e aggiunge le righe risultanti a data.csv marcate come Guessing.
+smista il risultato nel file giusto in base a un prefisso (#artista = artisti visual,
+default = eventi), e aggiunge le righe risultanti marcate come Guessing.
 """
 import os, csv, json, base64, urllib.request, urllib.error, sys, re
 
@@ -10,31 +11,57 @@ MODEL = 'gemini-3.6-flash'
 API_URL = f'https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent'
 
 PENDING = 'pending.csv'
-DATA = 'data.csv'
 
-PROMPT = """Sei un assistente che cataloga locali, club, festival, collettivi e spazi culturali legati a musica elettronica, arte e digital art.
+SECTION_TAGS = {
+    '#artista': 'artisti-visual.csv',
+    '#art': 'artisti-visual.csv',
+    '#digital': 'artisti-visual.csv',
+    '#visual': 'artisti-visual.csv',
+}
+DEFAULT_TARGET = 'data.csv'
 
-Analizza il contenuto fornito ed estrai TUTTE le entità rilevanti (locali, festival, collettivi, artisti in tour).
+PROMPT_EVENTI = """Sei un assistente che cataloga locali, club, festival, collettivi e spazi culturali legati a musica elettronica, arte e digital art.
+
+Analizza il contenuto fornito ed estrai TUTTE le entita rilevanti (locali, festival, collettivi, artisti in tour).
 
 REGOLE FERREE:
 - Estrai SOLO handle Instagram che vedi scritti esplicitamente nel testo o nell'immagine. NON inventare mai un handle basandoti sul nome.
 - Se non vedi un handle scritto, lascia il campo link vuoto.
-- Se non sei sicuro della città, lascia vuoto invece di indovinare.
+- Se non sei sicuro della citta, lascia vuoto invece di indovinare.
 
 Rispondi SOLO con un array JSON, senza testo prima o dopo, senza markdown. Formato:
 [{"name":"...","city":"...","country":"...","type":"Musica|Arte|Digital art|Misto|Tour artista","handle":"...","note":"breve descrizione"}]
 
 Se non trovi nulla di rilevante, rispondi: []"""
 
+PROMPT_ARTISTI = """Sei un assistente che cataloga artisti digital art, new media, generative art e audiovisivi.
+
+Analizza il contenuto fornito ed estrai TUTTI gli artisti/collettivi rilevanti.
+
+REGOLE FERREE:
+- Estrai SOLO handle Instagram o link a portfolio/sito che vedi scritti esplicitamente nel testo o nell'immagine. NON inventare mai un handle basandoti sul nome.
+- Se non vedi un handle o link scritto, lascia il campo link vuoto.
+- Se non sei sicuro della citta o base dell'artista, lascia vuoto invece di indovinare.
+
+Rispondi SOLO con un array JSON, senza testo prima o dopo, senza markdown. Formato:
+[{"name":"...","city":"...","country":"...","type":"Digital art","handle":"...","note":"breve descrizione del medium/stile"}]
+
+Se non trovi nulla di rilevante, rispondi: []"""
+
+PROMPTS = {
+    'data.csv': PROMPT_EVENTI,
+    'artisti-visual.csv': PROMPT_ARTISTI,
+}
+
+
 def log_debug(msg):
+    os.makedirs('pending', exist_ok=True)
     with open('pending/debug.log', 'a', encoding='utf-8') as f:
         f.write(msg + '\n')
 
+
 def call_gemini(parts):
-    body = {
-        "contents": [{"parts": parts}],
-        "generationConfig": {"temperature": 0.1}
-    }
+    body = {"contents": [{"parts": parts}], "generationConfig": {"temperature": 0.1}}
     req = urllib.request.Request(
         API_URL,
         data=json.dumps(body).encode('utf-8'),
@@ -55,6 +82,7 @@ def call_gemini(parts):
         log_debug(msg)
         return None
 
+
 def parse_json_response(text):
     if not text:
         return []
@@ -65,9 +93,39 @@ def parse_json_response(text):
         print(f"JSON non valido: {e} | testo: {cleaned[:200]}")
         return []
 
+
+def determine_target(text):
+    stripped = text.strip()
+    lower = stripped.lower()
+    for tag, target in SECTION_TAGS.items():
+        if lower.startswith(tag):
+            cleaned = stripped[len(tag):].strip()
+            return target, cleaned
+    return DEFAULT_TARGET, stripped
+
+
+def load_existing_links(path):
+    links = set()
+    if os.path.exists(path):
+        with open(path, encoding='utf-8') as f:
+            for r in csv.DictReader(f):
+                if r.get('link'):
+                    links.add(r['link'].strip().lower())
+    return links
+
+
+def append_rows(path, rows):
+    write_header = not os.path.exists(path)
+    with open(path, 'a', newline='', encoding='utf-8') as f:
+        w = csv.writer(f)
+        if write_header:
+            w.writerow(['name', 'city', 'type', 'link', 'note', 'conf'])
+        for r in rows:
+            w.writerow(r)
+
+
 def main():
-    os.makedirs('pending', exist_ok=True)
-    log_debug(f"--- run: chiave presente={bool(GEMINI_KEY)}, lunghezza={len(GEMINI_KEY)}, prefisso={GEMINI_KEY[:6] if GEMINI_KEY else 'N/A'}, modello={MODEL}")
+    log_debug(f"--- run: chiave presente={bool(GEMINI_KEY)}, lunghezza={len(GEMINI_KEY)}, modello={MODEL}")
     if not GEMINI_KEY:
         print("GEMINI_API_KEY mancante, esco.")
         log_debug("CHIAVE MANCANTE")
@@ -84,83 +142,76 @@ def main():
         return
 
     print(f"Voci in coda: {len(rows)}")
-    extracted = []
+    extracted_by_target = {}
 
     for row in rows:
         text = row['text']
         parts = []
+        target = DEFAULT_TARGET
+
         m = re.match(r'\[FOTO\]\s+(\S+)\s*\|\s*didascalia:\s*(.*)', text)
         if m:
             img_path, caption = m.group(1), m.group(2)
+            target, cleaned_caption = determine_target(caption)
             if os.path.exists(img_path):
                 with open(img_path, 'rb') as imf:
                     b64 = base64.b64encode(imf.read()).decode('utf-8')
                 parts.append({"inline_data": {"mime_type": "image/jpeg", "data": b64}})
-                parts.append({"text": PROMPT + f"\n\nDidascalia allegata: {caption}"})
+                parts.append({"text": PROMPTS[target] + f"\n\nDidascalia allegata: {cleaned_caption}"})
             else:
                 print(f"Immagine non trovata: {img_path}")
                 continue
         else:
-            parts.append({"text": PROMPT + f"\n\nContenuto da analizzare:\n{text}"})
+            target, cleaned_text = determine_target(text)
+            parts.append({"text": PROMPTS[target] + f"\n\nContenuto da analizzare:\n{cleaned_text}"})
 
         result = call_gemini(parts)
-        log_debug(f"risposta grezza: {str(result)[:400]}")
+        log_debug(f"target={target} | risposta grezza: {str(result)[:400]}")
         items = parse_json_response(result)
-        print(f"  -> estratte {len(items)} entita da: {text[:60]}")
-        extracted.extend(items)
+        print(f"  -> estratte {len(items)} entita ({target}) da: {text[:60]}")
+        extracted_by_target.setdefault(target, []).extend(items)
 
-    if not extracted:
+    if not extracted_by_target:
         print("Nessuna entita estratta.")
         return
 
-    # Carico i link gia presenti per evitare duplicati
-    existing_links = set()
-    if os.path.exists(DATA):
-        with open(DATA, encoding='utf-8') as f:
-            for r in csv.DictReader(f):
-                if r.get('link'):
-                    existing_links.add(r['link'].strip().lower())
+    for target, extracted in extracted_by_target.items():
+        existing_links = load_existing_links(target)
+        new_rows = []
+        default_type = 'Digital art' if target == 'artisti-visual.csv' else 'Musica'
 
-    new_rows = []
-    for item in extracted:
-        name = (item.get('name') or '').strip()
-        if not name:
-            continue
-        handle = (item.get('handle') or '').strip().lstrip('@')
-        link = f"https://www.instagram.com/{handle}" if handle else ''
-        if link and link.lower() in existing_links:
-            print(f"  gia presente, salto: {name}")
-            continue
-        if link:
-            existing_links.add(link.lower())
-        note = (item.get('note') or '').strip()
-        note = (note + ' [auto-estratto da Gemini, da verificare]').strip()
-        new_rows.append([
-            name,
-            (item.get('city') or '').strip(),
-            (item.get('type') or 'Musica').strip(),
-            link,
-            note,
-            'Guessing'
-        ])
+        for item in extracted:
+            name = (item.get('name') or '').strip()
+            if not name:
+                continue
+            handle = (item.get('handle') or '').strip().lstrip('@')
+            link = f"https://www.instagram.com/{handle}" if handle else ''
+            if link and link.lower() in existing_links:
+                print(f"  gia presente in {target}, salto: {name}")
+                continue
+            if link:
+                existing_links.add(link.lower())
+            note = (item.get('note') or '').strip()
+            note = (note + ' [auto-estratto da Gemini, da verificare]').strip()
+            new_rows.append([
+                name,
+                (item.get('city') or '').strip(),
+                (item.get('type') or default_type).strip(),
+                link,
+                note,
+                'Guessing'
+            ])
 
-    if not new_rows:
-        print("Nulla di nuovo da aggiungere.")
-        return
+        if new_rows:
+            append_rows(target, new_rows)
+            print(f"Aggiunte {len(new_rows)} righe a {target}")
+        else:
+            print(f"Nulla di nuovo da aggiungere a {target}")
 
-    write_header = not os.path.exists(DATA)
-    with open(DATA, 'a', newline='', encoding='utf-8') as f:
-        w = csv.writer(f)
-        if write_header:
-            w.writerow(['name','city','type','link','note','conf'])
-        for r in new_rows:
-            w.writerow(r)
-    print(f"Aggiunte {len(new_rows)} righe a {DATA}")
-
-    # Svuoto la coda
     with open(PENDING, 'w', newline='', encoding='utf-8') as f:
         f.write('timestamp,text\n')
     print("Coda svuotata.")
+
 
 if __name__ == '__main__':
     main()
