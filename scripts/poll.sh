@@ -4,11 +4,11 @@ set -e
 OFFSET_FILE="pending/tg_offset.txt"
 PENDING_FILE="pending.csv"
 
-# Leggo l'offset attuale (se non esiste, parto da 0)
-if [ -f "$OFFSET_FILE" ]; then
-  OFFSET=$(cat "$OFFSET_FILE")
-else
-  mkdir -p pending
+mkdir -p pending
+
+# Leggo l'offset attuale: se il file non esiste O è vuoto, parto da 0
+OFFSET=$(cat "$OFFSET_FILE" 2>/dev/null || echo "")
+if [ -z "$OFFSET" ]; then
   OFFSET=0
 fi
 
