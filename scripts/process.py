@@ -3,6 +3,12 @@
 Legge pending.csv, manda ogni voce a Gemini per l'estrazione strutturata,
 smista il risultato nel file giusto in base a un prefisso (#artista = artisti visual,
 default = eventi), e aggiunge le righe risultanti marcate come Guessing.
+
+IMPORTANTE: una riga viene rimossa dalla coda SOLO se Gemini ha risposto
+correttamente (anche con lista vuota = nulla di riconoscibile). Se la chiamata
+API fallisce (errore di rete, timeout, chiave, quota) la riga RESTA in coda
+per essere ritentata al prossimo giro, cosi' nessun messaggio va mai perso
+per un problema temporaneo.
 """
 import os, csv, json, base64, urllib.request, urllib.error, sys, re
 
@@ -28,6 +34,7 @@ REGOLE FERREE:
 - Estrai SOLO handle Instagram che vedi scritti esplicitamente nel testo o nell'immagine. NON inventare mai un handle basandoti sul nome.
 - Se non vedi un handle scritto, lascia il campo link vuoto.
 - Se non sei sicuro della citta, lascia vuoto invece di indovinare.
+- Se il testo non contiene nessuna entita catalogabile (es. un saluto, un test, una frase generica), rispondi con array vuoto [].
 
 Rispondi SOLO con un array JSON, senza testo prima o dopo, senza markdown. Formato:
 [{"name":"...","city":"...","country":"...","type":"Musica|Arte|Digital art|Misto|Tour artista","handle":"...","note":"breve descrizione"}]
@@ -42,6 +49,7 @@ REGOLE FERREE:
 - Estrai SOLO handle Instagram o link a portfolio/sito che vedi scritti esplicitamente nel testo o nell'immagine. NON inventare mai un handle basandoti sul nome.
 - Se non vedi un handle o link scritto, lascia il campo link vuoto.
 - Se non sei sicuro della citta o base dell'artista, lascia vuoto invece di indovinare.
+- Se il testo non contiene nessun artista riconoscibile (es. un saluto, un test, una frase generica), rispondi con array vuoto [].
 
 Rispondi SOLO con un array JSON, senza testo prima o dopo, senza markdown. Formato:
 [{"name":"...","city":"...","country":"...","type":"Digital art","handle":"...","note":"breve descrizione del medium/stile"}]
@@ -61,6 +69,8 @@ def log_debug(msg):
 
 
 def call_gemini(parts):
+    """Ritorna (testo_risposta, successo). successo=False solo per errori di rete/API,
+    non per risposte valide che contengono un array vuoto."""
     body = {"contents": [{"parts": parts}], "generationConfig": {"temperature": 0.1}}
     req = urllib.request.Request(
         API_URL,
@@ -70,28 +80,31 @@ def call_gemini(parts):
     try:
         with urllib.request.urlopen(req, timeout=60) as r:
             resp = json.load(r)
-        return resp['candidates'][0]['content']['parts'][0]['text']
+        text = resp['candidates'][0]['content']['parts'][0]['text']
+        return text, True
     except urllib.error.HTTPError as e:
         msg = f"Errore Gemini HTTP {e.code}: {e.read().decode()[:500]}"
         print(msg)
         log_debug(msg)
-        return None
+        return None, False
     except Exception as e:
         msg = f"Errore Gemini: {type(e).__name__}: {e}"
         print(msg)
         log_debug(msg)
-        return None
+        return None, False
 
 
 def parse_json_response(text):
+    """Ritorna (lista_items, parsing_riuscito). parsing_riuscito=False se il JSON
+    e' malformato (da NON considerare come successo, va ritentato)."""
     if not text:
-        return []
+        return [], False
     cleaned = re.sub(r'```(?:json)?|```', '', text).strip()
     try:
-        return json.loads(cleaned)
+        return json.loads(cleaned), True
     except Exception as e:
         print(f"JSON non valido: {e} | testo: {cleaned[:200]}")
-        return []
+        return [], False
 
 
 def determine_target(text):
@@ -127,7 +140,7 @@ def append_rows(path, rows):
 def main():
     log_debug(f"--- run: chiave presente={bool(GEMINI_KEY)}, lunghezza={len(GEMINI_KEY)}, modello={MODEL}")
     if not GEMINI_KEY:
-        print("GEMINI_API_KEY mancante, esco.")
+        print("GEMINI_API_KEY mancante, esco. Nessuna riga verra' rimossa dalla coda.")
         log_debug("CHIAVE MANCANTE")
         return
     if not os.path.exists(PENDING):
@@ -142,7 +155,9 @@ def main():
         return
 
     print(f"Voci in coda: {len(rows)}")
-    extracted_by_target = {}
+    extracted_by_target = {}   # target_file -> lista di item estratti
+    failed_rows = []           # righe da RIMETTERE in coda (errore temporaneo)
+    succeeded_count = 0
 
     for row in rows:
         text = row['text']
@@ -153,28 +168,38 @@ def main():
         if m:
             img_path, caption = m.group(1), m.group(2)
             target, cleaned_caption = determine_target(caption)
-            if os.path.exists(img_path):
-                with open(img_path, 'rb') as imf:
-                    b64 = base64.b64encode(imf.read()).decode('utf-8')
-                parts.append({"inline_data": {"mime_type": "image/jpeg", "data": b64}})
-                parts.append({"text": PROMPTS[target] + f"\n\nDidascalia allegata: {cleaned_caption}"})
-            else:
-                print(f"Immagine non trovata: {img_path}")
+            if not os.path.exists(img_path):
+                print(f"Immagine non trovata: {img_path} -- tengo la riga in coda per sicurezza")
+                failed_rows.append(row)
                 continue
+            with open(img_path, 'rb') as imf:
+                b64 = base64.b64encode(imf.read()).decode('utf-8')
+            parts.append({"inline_data": {"mime_type": "image/jpeg", "data": b64}})
+            parts.append({"text": PROMPTS[target] + f"\n\nDidascalia allegata: {cleaned_caption}"})
         else:
             target, cleaned_text = determine_target(text)
             parts.append({"text": PROMPTS[target] + f"\n\nContenuto da analizzare:\n{cleaned_text}"})
 
-        result = call_gemini(parts)
-        log_debug(f"target={target} | risposta grezza: {str(result)[:400]}")
-        items = parse_json_response(result)
+        result_text, api_ok = call_gemini(parts)
+        log_debug(f"target={target} | api_ok={api_ok} | risposta grezza: {str(result_text)[:400]}")
+
+        if not api_ok:
+            print(f"  errore API, tengo in coda per riprovare: {text[:60]}")
+            failed_rows.append(row)
+            continue
+
+        items, parse_ok = parse_json_response(result_text)
+        if not parse_ok:
+            print(f"  risposta non valida, tengo in coda per riprovare: {text[:60]}")
+            failed_rows.append(row)
+            continue
+
+        # Successo: la chiamata ha funzionato, indipendentemente da quanti item ha trovato
+        succeeded_count += 1
         print(f"  -> estratte {len(items)} entita ({target}) da: {text[:60]}")
         extracted_by_target.setdefault(target, []).extend(items)
 
-    if not extracted_by_target:
-        print("Nessuna entita estratta.")
-        return
-
+    # Scrivo le entita' estratte nei rispettivi file
     for target, extracted in extracted_by_target.items():
         existing_links = load_existing_links(target)
         new_rows = []
@@ -206,11 +231,16 @@ def main():
             append_rows(target, new_rows)
             print(f"Aggiunte {len(new_rows)} righe a {target}")
         else:
-            print(f"Nulla di nuovo da aggiungere a {target}")
+            print(f"Nulla di nuovo da aggiungere a {target} (chiamate riuscite ma senza entita' riconosciute)")
 
+    # Riscrivo la coda: solo le righe fallite restano, tutte le altre (elaborate con successo) sono rimosse
     with open(PENDING, 'w', newline='', encoding='utf-8') as f:
-        f.write('timestamp,text\n')
-    print("Coda svuotata.")
+        w = csv.writer(f)
+        w.writerow(['timestamp', 'text'])
+        for r in failed_rows:
+            w.writerow([r.get('timestamp', ''), r.get('text', '')])
+
+    print(f"Elaborazione completata: {succeeded_count} righe elaborate con successo, {len(failed_rows)} rimesse in coda per un nuovo tentativo.")
 
 
 if __name__ == '__main__':
