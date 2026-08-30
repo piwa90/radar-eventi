@@ -28,3 +28,5 @@ target=data.csv | risposta grezza: [
   
 --- run: chiave presente=True, lunghezza=53, modello=gemini-3.6-flash
 --- run: chiave presente=True, lunghezza=53, modello=gemini-3.6-flash
+--- run: chiave presente=True, lunghezza=53, modello=gemini-3.6-flash
+target=artisti-visual.csv | risposta grezza: []

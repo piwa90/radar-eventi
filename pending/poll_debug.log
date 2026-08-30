@@ -6,3 +6,8 @@
 [eventi] count=0 ok=true raw_preview={"ok":true,"result":[]}
 [artisti] lunghezza token: 46
 [artisti] count=0 ok=true raw_preview={"ok":true,"result":[]}
+[eventi] lunghezza token: 46
+[eventi] count=0 ok=true raw_preview={"ok":true,"result":[]}
+[artisti] lunghezza token: 46
+[artisti] count=1 ok=true raw_preview={"ok":true,"result":[{"update_id":898298695,
+"message":{"message_id":7,"from":{"id":8779360785,"is_bot":false,"first_name":"bob","username":"weah619","language_code":"en"},"chat":{"id":8779360785,"fir
