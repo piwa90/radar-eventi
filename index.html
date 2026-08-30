@@ -107,6 +107,11 @@
   <h2 class="sr-only">Radar Eventi</h2>
   <p id="sync-status" style="font-size:11px; color:#5a6a8a; margin:-4px 0 10px;"></p>
 
+  <div style="display:flex; gap:6px; margin-bottom:10px;">
+    <div id="sec-eventi" class="radar-tab active" onclick="switchSection('eventi')" style="flex:1;">Eventi</div>
+    <div id="sec-artisti" class="radar-tab" onclick="switchSection('artisti')" style="flex:1;">Artisti Visual</div>
+  </div>
+
   <div style="display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap;">
     <div id="tab-view" class="radar-tab active" onclick="switchTab('view')">&gt; sfoglia</div>
     <div id="tab-fest" class="radar-tab" onclick="switchTab('fest')">&gt; festival</div>
@@ -296,7 +301,7 @@ function isFestival(p) {
   return /festival/i.test(p.name) || /festival/i.test(p.note || '');
 }
 
-const notFoundList = [
+let notFoundList = [
   { name: 'Rote Flora', city: 'Amburgo', country: 'Germania', note: 'Centro sociale occupato, nessun profilo IG ufficiale verificabile' },
   { name: 'Plattenvereinigung', city: 'Berlino', country: 'Germania', note: 'Nessun account IG chiaro trovato' },
   { name: 'Kulturhaus Kili', city: 'Berlino', country: 'Germania', note: 'Trovato solo il profilo della sede di Marburg (chiusa), non quella di Berlino' },
@@ -352,7 +357,7 @@ const chinaArticles = [
   { title: "Tech by Day, DJ by Night: Shenzhen's Creative Underground", url: 'https://jingdaily.com/posts/tech-by-day-dj-by-night-shenzhen-s-creative-underground', source: 'Jing Daily', note: 'Scena underground di Shenzhen: professionisti tech che di notte fanno DJ set, spazi e collettivi emergenti' }
 ];
 
-const seedProfiles = [
+let seedProfiles = [
   { name: 'Artlab', city: 'Buenos Aires', type: 'Digital art', link: 'https://www.instagram.com/artlabpro', note: 'Laboratorio arte e tecnologia, legato a MUTEK AR e Supernova x Artlab (Ibiza)', conf: 'Certain' },
   { name: 'Poing Club', city: 'Rotterdam', type: 'Musica', link: 'https://www.instagram.com/poing_club', note: 'Collettivo club, organizza Poing Festival e serate all Export', conf: 'Certain' },
   { name: 'LaVallee', city: 'Bruxelles', type: 'Arte', link: 'https://www.instagram.com/lavallee_bxl', note: 'Studi arte, spazi espositivi ed eventi multidisciplinari', conf: 'Certain' },
@@ -709,6 +714,56 @@ let customProfiles = [];
 let deletedSeedLinks = [];
 let linkEdits = {};
 
+// ==== SUPPORTO MULTI-SEZIONE ====
+let currentSection = 'eventi';
+const sectionState = {
+  eventi: { seedProfiles: null, notFoundList: null, customProfiles: [], deletedSeedLinks: [], linkEdits: {}, profiles: [], remoteUrl: 'data.csv', loaded: false },
+  artisti: { seedProfiles: [], notFoundList: [], customProfiles: [], deletedSeedLinks: [], linkEdits: {}, profiles: [], remoteUrl: 'artisti-visual.csv', loaded: false }
+};
+
+function saveCurrentToState() {
+  const s = sectionState[currentSection];
+  s.seedProfiles = seedProfiles;
+  s.notFoundList = notFoundList;
+  s.customProfiles = customProfiles;
+  s.deletedSeedLinks = deletedSeedLinks;
+  s.linkEdits = linkEdits;
+  s.profiles = profiles;
+}
+
+function loadStateIntoGlobals(sec) {
+  const s = sectionState[sec];
+  seedProfiles = s.seedProfiles;
+  notFoundList = s.notFoundList;
+  customProfiles = s.customProfiles;
+  deletedSeedLinks = s.deletedSeedLinks;
+  linkEdits = s.linkEdits;
+  profiles = s.profiles;
+}
+
+async function switchSection(sec) {
+  if (sec === currentSection) return;
+  saveCurrentToState();
+  currentSection = sec;
+  document.getElementById('sec-eventi').classList.toggle('active', sec === 'eventi');
+  document.getElementById('sec-artisti').classList.toggle('active', sec === 'artisti');
+
+  loadStateIntoGlobals(sec);
+  selectedCity = '__all__';
+
+  if (!sectionState[sec].loaded) {
+    await loadProfiles();
+    sectionState[sec].loaded = true;
+    saveCurrentToState();
+  } else {
+    rebuildProfiles();
+  }
+  renderCityFilter();
+  renderList();
+  renderFestivals();
+  renderNotFound();
+}
+
 function rebuildProfiles() {
   const seedPart = seedProfiles
     .filter(p => !deletedSeedLinks.includes(p.link))
@@ -729,9 +784,10 @@ renderChina();
 
 async function tryLoadRemoteSeed() {
   const statusEl = document.getElementById('sync-status');
-  if (!REMOTE_DATA_URL) return;
+  const url = sectionState[currentSection].remoteUrl;
+  if (!url) return;
   try {
-    const res = await fetch(REMOTE_DATA_URL, { cache: 'no-store' });
+    const res = await fetch(url, { cache: 'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const csvText = await res.text();
     if (!csvText || csvText.trim().length === 0) {
@@ -757,25 +813,29 @@ async function tryLoadRemoteSeed() {
   }
 }
 
+function sectionKey(base) {
+  return currentSection === 'eventi' ? base : (base + '_' + currentSection);
+}
+
 async function loadProfiles() {
   await tryLoadRemoteSeed();
 
   let cp = null;
   try {
-    cp = await storage.get('customProfiles');
+    cp = await storage.get(sectionKey('customProfiles'));
     customProfiles = cp ? JSON.parse(cp.value) : [];
   } catch (e) { customProfiles = []; }
   try {
-    const dl = await storage.get('deletedSeedLinks');
+    const dl = await storage.get(sectionKey('deletedSeedLinks'));
     deletedSeedLinks = dl ? JSON.parse(dl.value) : [];
   } catch (e) { deletedSeedLinks = []; }
   try {
-    const le = await storage.get('linkEdits');
+    const le = await storage.get(sectionKey('linkEdits'));
     linkEdits = le ? JSON.parse(le.value) : {};
   } catch (e) { linkEdits = {}; }
 
-  // Migrazione una tantum da vecchio formato 'profiles' (versione precedente dello storage)
-  if (!cp) {
+  // Migrazione una tantum da vecchio formato 'profiles' (solo sezione eventi, versione precedente dello storage)
+  if (!cp && currentSection === 'eventi') {
     try {
       const old = await storage.get('profiles');
       if (old) {
@@ -784,8 +844,8 @@ async function loadProfiles() {
         const seedLinks = new Set(seedProfiles.map(p => p.link));
         customProfiles = oldArr.filter(p => !seedLinks.has(p.link));
         deletedSeedLinks = seedProfiles.filter(p => !oldLinks.has(p.link)).map(p => p.link);
-        await storage.set('customProfiles', JSON.stringify(customProfiles));
-        await storage.set('deletedSeedLinks', JSON.stringify(deletedSeedLinks));
+        await storage.set(sectionKey('customProfiles'), JSON.stringify(customProfiles));
+        await storage.set(sectionKey('deletedSeedLinks'), JSON.stringify(deletedSeedLinks));
       }
     } catch (e) {}
   }
@@ -797,13 +857,13 @@ async function loadProfiles() {
 }
 
 async function persistCustom() {
-  try { await storage.set('customProfiles', JSON.stringify(customProfiles)); } catch (e) {}
+  try { await storage.set(sectionKey('customProfiles'), JSON.stringify(customProfiles)); } catch (e) {}
 }
 async function persistDeleted() {
-  try { await storage.set('deletedSeedLinks', JSON.stringify(deletedSeedLinks)); } catch (e) {}
+  try { await storage.set(sectionKey('deletedSeedLinks'), JSON.stringify(deletedSeedLinks)); } catch (e) {}
 }
 async function persistEdits() {
-  try { await storage.set('linkEdits', JSON.stringify(linkEdits)); } catch (e) {}
+  try { await storage.set(sectionKey('linkEdits'), JSON.stringify(linkEdits)); } catch (e) {}
 }
 
 function renderCityFilter() {
@@ -1113,7 +1173,10 @@ function escapeHtml(str) {
   return d.innerHTML;
 }
 
-loadProfiles();
+loadProfiles().then(() => {
+  sectionState.eventi.loaded = true;
+  saveCurrentToState();
+});
 </script>
 </body>
 </html>
