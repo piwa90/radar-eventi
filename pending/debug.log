@@ -1,0 +1,28 @@
+--- run: chiave presente=True, lunghezza=53, modello=gemini-3.6-flash
+target=data.csv | risposta grezza: [
+  {
+    "name": "Critical Mass Space",
+    "city": "",
+    "country": "",
+    "type": "Misto",
+    "handle": "criticalmass.space",
+    "note": "Collettivo e spazio culturale dedicato a musica elettronica, arte e cultura digitale"
+  }
+]
+target=data.csv | risposta grezza: [
+  {
+    "name": "MAGMA",
+    "city": "",
+    "country": "Italia",
+    "type": "Misto",
+    "handle": "magma_it",
+    "note": "Collettivo e organizzatore dell'evento Dazin Dazeto - Overnight Listening Session"
+  },
+  {
+    "name": "Casa dei Tre Oci",
+    "city": "Venezia",
+    "country": "Italia",
+    "type": "Arte",
+    "handle": "",
+    "note": "Spazio culturale e sede dell'evento a Venezia"
+  
