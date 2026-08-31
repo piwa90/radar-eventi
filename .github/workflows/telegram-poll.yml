@@ -20,6 +20,7 @@ jobs:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_TOKEN_ARTISTI: ${{ secrets.TELEGRAM_TOKEN_ARTISTI }}
           TELEGRAM_TOKEN_ARTISTI_MUSIC: ${{ secrets.TELEGRAM_TOKEN_ARTISTI_MUSIC }}
+          TELEGRAM_TOKEN_ART_VENUES: ${{ secrets.TELEGRAM_TOKEN_ART_VENUES }}
         run: bash scripts/poll.sh
 
       - name: Process queue with Gemini
@@ -33,10 +34,11 @@ jobs:
           touch pending/tg_offset.txt
           touch pending/tg_offset_artisti.txt
           touch pending/tg_offset_artisti_music.txt
+          touch pending/tg_offset_art_venues.txt
           [ -f pending.csv ] || echo "timestamp,text" > pending.csv
           git config user.name "radar-bot"
           git config user.email "radar-bot@users.noreply.github.com"
-          git add pending.csv pending/tg_offset.txt pending/tg_offset_artisti.txt pending/tg_offset_artisti_music.txt pending/images/ data.csv artisti-visual.csv artisti-music.csv pending/debug.log pending/poll_debug.log
+          git add pending.csv pending/tg_offset.txt pending/tg_offset_artisti.txt pending/tg_offset_artisti_music.txt pending/tg_offset_art_venues.txt pending/images/ data.csv artisti-visual.csv artisti-music.csv art-venues.csv pending/debug.log pending/poll_debug.log
           if git diff --staged --quiet; then
             echo "Nessuna modifica da salvare"
           else
