@@ -103,3 +103,4 @@ poll_bot() {
 poll_bot "${TELEGRAM_TOKEN}" "pending/tg_offset.txt" "" "eventi"
 poll_bot "${TELEGRAM_TOKEN_ARTISTI}" "pending/tg_offset_artisti.txt" "#artista " "artisti"
 poll_bot "${TELEGRAM_TOKEN_ARTISTI_MUSIC}" "pending/tg_offset_artisti_music.txt" "#artistamusic " "artisti_music"
+poll_bot "${TELEGRAM_TOKEN_ART_VENUES}" "pending/tg_offset_art_venues.txt" "#artvenue " "art_venues"
