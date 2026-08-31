@@ -23,6 +23,8 @@ SECTION_TAGS = {
     '#art': 'artisti-visual.csv',
     '#digital': 'artisti-visual.csv',
     '#visual': 'artisti-visual.csv',
+    '#artistamusic': 'artisti-music.csv',
+    '#musicista': 'artisti-music.csv',
 }
 DEFAULT_TARGET = 'data.csv'
 
@@ -68,10 +70,40 @@ Rispondi SOLO con un array JSON, senza testo prima o dopo, senza markdown. Forma
 
 Se non trovi nulla di rilevante, rispondi: []"""
 
+PROMPT_ARTISTI_MUSIC = """Sei un assistente che cataloga musicisti/producer/DJ (persone o collettivi che fanno musica), E le venue musicali (club, festival, locali) quando compaiono nello stesso contenuto.
+
+Analizza il contenuto fornito ed estrai TUTTE le entita rilevanti.
+
+DISTINZIONE FONDAMENTALE - ARTISTA vs VENUE:
+Un musicista/DJ/producer (persona o collettivo che fa musica) e una venue (club, locale, festival che lo ospita) sono DUE COSE DIVERSE. Se il contenuto menziona entrambi insieme (es. "tal DJ suona da tal club"), estrai SEMPRE due righe separate, mai una sola:
+- una riga per il musicista, con kind "artista"
+- una riga per la venue/il locale/il festival, con kind "venue"
+Se vedi solo il musicista senza nessuna venue associata, estrai solo il musicista. Se vedi solo una venue senza nessun musicista associato, estrai solo la venue.
+
+REGOLE FERREE:
+- Estrai SOLO handle Instagram o link a Bandcamp/Soundcloud/sito che vedi scritti esplicitamente nel testo o nell'immagine. NON inventare mai un handle basandoti sul nome.
+- Se non vedi un handle o link scritto, lascia il campo link vuoto.
+- Se non sei sicuro della citta o base del musicista/venue, lascia vuoto invece di indovinare.
+- Se il testo non contiene nessuna entita riconoscibile (es. un saluto, un test, una frase generica), rispondi con array vuoto [].
+
+Rispondi SOLO con un array JSON, senza testo prima o dopo, senza markdown. Formato:
+[{"name":"...","city":"...","country":"...","kind":"artista|venue","handle":"...","note":"breve descrizione del genere/stile"}]
+
+Se non trovi nulla di rilevante, rispondi: []"""
+
 PROMPTS = {
     'data.csv': PROMPT_EVENTI,
     'artisti-visual.csv': PROMPT_ARTISTI,
+    'artisti-music.csv': PROMPT_ARTISTI_MUSIC,
 }
+
+# Per i bot che estraggono sia artisti sia venue nello stesso content (campo "kind"):
+# gli artisti restano nel file target, le venue vengono smistate verso Eventi.
+KIND_SPLIT_CONFIG = {
+    'artisti-visual.csv': {'artist_type': 'Digital art', 'venue_type': 'Arte'},
+    'artisti-music.csv': {'artist_type': 'Musica', 'venue_type': 'Musica'},
+}
+
 
 
 def log_debug(msg):
@@ -122,8 +154,12 @@ def parse_json_response(text):
 def determine_target(text):
     stripped = text.strip()
     lower = stripped.lower()
-    for tag, target in SECTION_TAGS.items():
-        if lower.startswith(tag):
+    # Controllo i tag dal piu lungo al piu corto e richiedo un confine di parola
+    # (spazio o fine stringa dopo il tag), altrimenti "#artistamusic" verrebbe
+    # scambiato per "#artista" di cui e' un prefisso.
+    for tag in sorted(SECTION_TAGS.keys(), key=len, reverse=True):
+        if lower == tag or lower.startswith(tag + ' '):
+            target = SECTION_TAGS[tag]
             cleaned = stripped[len(tag):].strip()
             return target, cleaned
     return DEFAULT_TARGET, stripped
@@ -211,22 +247,24 @@ def main():
         print(f"  -> estratte {len(items)} entita ({target}) da: {text[:60]}")
         extracted_by_target.setdefault(target, []).extend(items)
 
-    # Il bot Artisti restituisce sia artisti sia venue (campo "kind"): le venue vanno
-    # smistate verso Eventi (tipo "Arte"), solo gli artisti restano in artisti-visual.csv
-    if 'artisti-visual.csv' in extracted_by_target:
-        artisti_items = extracted_by_target.pop('artisti-visual.csv')
+    # I bot Artisti restituiscono sia artisti sia venue (campo "kind"): le venue vanno
+    # smistate verso Eventi, solo gli artisti restano nel loro file
+    for kind_target, cfg in KIND_SPLIT_CONFIG.items():
+        if kind_target not in extracted_by_target:
+            continue
+        items_to_split = extracted_by_target.pop(kind_target)
         only_artists = []
-        for item in artisti_items:
+        for item in items_to_split:
             kind = (item.get('kind') or 'artista').strip().lower()
             if kind == 'venue':
-                item['type'] = 'Arte'
+                item['type'] = cfg['venue_type']
                 note = (item.get('note') or '').strip()
-                item['note'] = (note + " [venue d'arte, trovata tramite bot Artisti Visual]").strip()
+                item['note'] = (note + f" [venue trovata tramite bot {kind_target.replace('.csv','')}]").strip()
                 extracted_by_target.setdefault('data.csv', []).append(item)
             else:
-                item['type'] = 'Digital art'
+                item['type'] = cfg['artist_type']
                 only_artists.append(item)
-        extracted_by_target['artisti-visual.csv'] = only_artists
+        extracted_by_target[kind_target] = only_artists
 
     # Scrivo le entita' estratte nei rispettivi file
     for target, extracted in extracted_by_target.items():
