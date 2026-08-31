@@ -47,21 +47,24 @@ Rispondi SOLO con un array JSON, senza testo prima o dopo, senza markdown. Forma
 
 Se non trovi nulla di rilevante, rispondi: []"""
 
-PROMPT_ARTISTI = """Sei un assistente che cataloga SOLO artisti/creatori digital art, new media, generative art e audiovisivi (persone o collettivi che producono opere) — non locali ne spazi che li ospitano.
+PROMPT_ARTISTI = """Sei un assistente che cataloga artisti/creatori digital art, new media, generative art e audiovisivi (persone o collettivi che producono opere), E le venue d'arte (gallerie, spazi indipendenti, project space, musei) quando compaiono nello stesso contenuto.
 
-Analizza il contenuto fornito ed estrai TUTTI gli artisti/collettivi rilevanti.
+Analizza il contenuto fornito ed estrai TUTTE le entita rilevanti.
 
 DISTINZIONE FONDAMENTALE - ARTISTA vs VENUE:
-Un artista visual/digital (persona o collettivo che crea l'opera) e una venue (galleria, museo, festival, spazio che la espone/ospita) sono DUE COSE DIVERSE. Se il contenuto menziona entrambi insieme (es. "installazione di tal artista alla galleria X"), estrai SOLO l'artista/creatore. NON estrarre la galleria/museo/festival/spazio come se fosse un artista, anche se compare nel testo o nell'immagine — quella informazione appartiene a un catalogo diverso, non a questo.
+Un artista (persona o collettivo che crea l'opera) e una venue (galleria, museo, spazio che la espone/ospita) sono DUE COSE DIVERSE. Se il contenuto menziona entrambi insieme (es. "installazione di tal artista alla galleria X"), estrai SEMPRE due righe separate, mai una sola:
+- una riga per l'artista, con kind "artista"
+- una riga per la venue/galleria/spazio, con kind "venue"
+Se vedi solo l'artista senza nessuna venue associata, estrai solo l'artista. Se vedi solo una venue senza nessun artista associato, estrai solo la venue.
 
 REGOLE FERREE:
 - Estrai SOLO handle Instagram o link a portfolio/sito che vedi scritti esplicitamente nel testo o nell'immagine. NON inventare mai un handle basandoti sul nome.
 - Se non vedi un handle o link scritto, lascia il campo link vuoto.
-- Se non sei sicuro della citta o base dell'artista, lascia vuoto invece di indovinare.
-- Se il testo non contiene nessun artista riconoscibile (es. un saluto, un test, una frase generica, o solo il nome di una venue senza artisti associati), rispondi con array vuoto [].
+- Se non sei sicuro della citta o base dell'artista/venue, lascia vuoto invece di indovinare.
+- Se il testo non contiene nessuna entita riconoscibile (es. un saluto, un test, una frase generica), rispondi con array vuoto [].
 
 Rispondi SOLO con un array JSON, senza testo prima o dopo, senza markdown. Formato:
-[{"name":"...","city":"...","country":"...","type":"Digital art","handle":"...","note":"breve descrizione del medium/stile"}]
+[{"name":"...","city":"...","country":"...","kind":"artista|venue","handle":"...","note":"breve descrizione"}]
 
 Se non trovi nulla di rilevante, rispondi: []"""
 
@@ -207,6 +210,23 @@ def main():
         succeeded_count += 1
         print(f"  -> estratte {len(items)} entita ({target}) da: {text[:60]}")
         extracted_by_target.setdefault(target, []).extend(items)
+
+    # Il bot Artisti restituisce sia artisti sia venue (campo "kind"): le venue vanno
+    # smistate verso Eventi (tipo "Arte"), solo gli artisti restano in artisti-visual.csv
+    if 'artisti-visual.csv' in extracted_by_target:
+        artisti_items = extracted_by_target.pop('artisti-visual.csv')
+        only_artists = []
+        for item in artisti_items:
+            kind = (item.get('kind') or 'artista').strip().lower()
+            if kind == 'venue':
+                item['type'] = 'Arte'
+                note = (item.get('note') or '').strip()
+                item['note'] = (note + " [venue d'arte, trovata tramite bot Artisti Visual]").strip()
+                extracted_by_target.setdefault('data.csv', []).append(item)
+            else:
+                item['type'] = 'Digital art'
+                only_artists.append(item)
+        extracted_by_target['artisti-visual.csv'] = only_artists
 
     # Scrivo le entita' estratte nei rispettivi file
     for target, extracted in extracted_by_target.items():
