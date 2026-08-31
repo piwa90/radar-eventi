@@ -99,6 +99,25 @@
   .radar-dropdown-item.all {
     color: #ffd60a; font-weight: bold; border-bottom: 1px solid #1e2a4a;
   }
+  .radar-chip {
+    padding: 7px 14px; font-size: 12px; white-space: nowrap;
+    cursor: pointer; border: 1px solid #1e2a4a; border-radius: 999px;
+    background: #0e1530; color: #8ab4ff;
+  }
+  .radar-chip.active { border-color: #ffd60a; background: #1a1440; color: #ffd60a; }
+  .radar-add-btn {
+    white-space: nowrap; padding: 7px 14px; font-size: 12px;
+    border: 1px solid #ffd60a; border-radius: 6px;
+    background: #1a1440; color: #ffd60a; cursor: pointer; font-family: inherit;
+  }
+  .radar-search {
+    width: 100%; box-sizing: border-box;
+    background: #050818; color: #e8e8e8;
+    border: 1px solid #1e2a4a; border-radius: 4px;
+    padding: 8px; font-family: inherit; font-size: 14px;
+    margin-bottom: 8px;
+  }
+  .radar-search::placeholder { color: #5a6a8a; }
 </style>
 </head>
 <body>
@@ -112,15 +131,18 @@
     <div id="sec-artisti" class="radar-tab" onclick="switchSection('artisti')" style="flex:1;">Artisti Visual</div>
   </div>
 
-  <div style="display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap;">
-    <div id="tab-view" class="radar-tab active" onclick="switchTab('view')">&gt; sfoglia</div>
-    <div id="tab-fest" class="radar-tab" onclick="switchTab('fest')">&gt; festival</div>
-    <div id="tab-cn" class="radar-tab" onclick="switchTab('cn')">&gt; cina</div>
-    <div id="tab-add" class="radar-tab" onclick="switchTab('add')">&gt; aggiungi</div>
-    <div id="tab-nf" class="radar-tab" onclick="switchTab('nf')">&gt; non trovati</div>
+  <div style="display:flex; gap:8px; margin-bottom:14px; align-items:center;">
+    <div style="display:flex; gap:6px; overflow-x:auto; flex:1;">
+      <div id="tab-view" class="radar-chip active" onclick="switchTab('view')">Tutti</div>
+      <div id="tab-fest" class="radar-chip" onclick="switchTab('fest')">Festival</div>
+      <div id="tab-cn" class="radar-chip" onclick="switchTab('cn')">Cina</div>
+      <div id="tab-nf" class="radar-chip" onclick="switchTab('nf')">Non trovati</div>
+    </div>
+    <button id="tab-add-btn" class="radar-add-btn" onclick="switchTab('add')">+ Aggiungi</button>
   </div>
 
   <div id="view-panel">
+    <input id="search-box" class="radar-search" placeholder="cerca per nome, città, nota..." oninput="renderList()">
     <div class="radar-dropdown" style="margin-bottom:8px;">
       <div id="city-filter-btn" class="radar-dropdown-btn" onclick="toggleCityDropdown()">
         <span id="city-filter-label">-- tutte le città --</span>
@@ -128,8 +150,11 @@
       </div>
       <div id="city-filter-panel" class="radar-dropdown-panel"></div>
     </div>
-    <label style="display:flex; align-items:center; gap:6px; margin-bottom:12px;">
+    <label style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
       <input type="checkbox" id="tour-only" style="width:auto;" onchange="renderList()"> mostra solo i tour da controllare
+    </label>
+    <label style="display:flex; align-items:center; gap:6px; margin-bottom:12px;">
+      <input type="checkbox" id="guessing-only" style="width:auto;" onchange="renderList()"> mostra solo da verificare (Guessing)
     </label>
     <div id="list"></div>
   </div>
@@ -195,9 +220,7 @@ let longPressTimer = null;
 let suppressNextClick = false;
 
 // ==== CONFIGURAZIONE SYNC REMOTA ====
-// Incolla qui l'URL "Pubblica sul web" (formato CSV) del tuo Google Sheet.
-// Istruzioni: File > Condividi > Pubblica sul web > scegli il foglio > formato "Valori separati da virgola (.csv)"
-// Lascialo vuoto per usare solo i dati salvati dentro questo file.
+// Percorso del file CSV da cui l'app scarica i dati aggiornati (relativo, stesso dominio GitHub Pages)
 const REMOTE_DATA_URL = 'data.csv';
 
 // Compatibilita storage: usa window.storage se disponibile (dentro Claude.ai),
@@ -747,9 +770,16 @@ async function switchSection(sec) {
   currentSection = sec;
   document.getElementById('sec-eventi').classList.toggle('active', sec === 'eventi');
   document.getElementById('sec-artisti').classList.toggle('active', sec === 'artisti');
+  document.getElementById('tab-cn').style.display = sec === 'eventi' ? '' : 'none';
+  if (sec === 'artisti' && document.getElementById('tab-cn').classList.contains('active')) {
+    switchTab('view');
+  }
 
   loadStateIntoGlobals(sec);
   selectedCity = '__all__';
+  document.getElementById('search-box').value = '';
+  document.getElementById('tour-only').checked = false;
+  document.getElementById('guessing-only').checked = false;
 
   if (!sectionState[sec].loaded) {
     await loadProfiles();
@@ -791,7 +821,7 @@ async function tryLoadRemoteSeed() {
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const csvText = await res.text();
     if (!csvText || csvText.trim().length === 0) {
-      if (statusEl) statusEl.textContent = '// Google Sheet raggiunto ma risposta vuota, uso i dati salvati nel file';
+      if (statusEl) statusEl.textContent = '// GitHub raggiunto ma risposta vuota, uso i dati salvati nel file';
       return;
     }
     const parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true });
@@ -804,12 +834,12 @@ async function tryLoadRemoteSeed() {
     if (remoteProfiles.length > 0) {
       seedProfiles.length = 0;
       seedProfiles.push(...remoteProfiles);
-      if (statusEl) statusEl.textContent = '// dati aggiornati da Google Sheet (' + remoteProfiles.length + ' profili)';
+      if (statusEl) statusEl.textContent = '// dati aggiornati da GitHub (' + remoteProfiles.length + ' profili)';
     } else {
-      if (statusEl) statusEl.textContent = '// Google Sheet raggiunto (' + csvText.length + ' caratteri) ma 0 righe valide, uso i dati salvati nel file. Colonne trovate: ' + (parsed.meta && parsed.meta.fields ? parsed.meta.fields.join(', ') : 'nessuna');
+      if (statusEl) statusEl.textContent = '// GitHub raggiunto (' + csvText.length + ' caratteri) ma 0 righe valide, uso i dati salvati nel file. Colonne trovate: ' + (parsed.meta && parsed.meta.fields ? parsed.meta.fields.join(', ') : 'nessuna');
     }
   } catch (e) {
-    if (statusEl) statusEl.textContent = '// errore di connessione a Google Sheet (' + e.message + '), uso i dati salvati nel file';
+    if (statusEl) statusEl.textContent = '// errore di connessione a GitHub (' + e.message + '), uso i dati salvati nel file';
   }
 }
 
@@ -934,8 +964,8 @@ function cardHtml(p, realIdx) {
           <a href="${escapeHtml(p.link)}" onclick="return handleNameClick(event)" style="font-weight:bold; font-size:15px; text-decoration:none;">${escapeHtml(p.name)}</a>
           <p style="font-size:12px; color:#8ab4ff; margin:2px 0 0;">${escapeHtml(p.city)}</p>
         </div>
-        <button aria-label="Elimina profilo" onclick="requestDelete(${realIdx})" style="border:none; background:none; padding:4px; cursor:pointer; color:#5a6a8a; font-family:inherit;">
-          [x]
+        <button aria-label="Elimina profilo" onclick="requestDelete(${realIdx})" style="border:none; background:none; padding:4px 6px; cursor:pointer; color:#5a6a8a; font-family:inherit; font-size:16px; line-height:1; border-radius:4px;">
+          ✕
         </button>
       </div>
       <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">
@@ -1022,10 +1052,20 @@ function renderList() {
   const list = document.getElementById('list');
   const sel = selectedCity;
   const tourOnly = document.getElementById('tour-only').checked;
+  const guessingOnly = document.getElementById('guessing-only').checked;
+  const searchTerm = (document.getElementById('search-box').value || '').trim().toLowerCase();
   let filtered = sel === '__all__' ? profiles : profiles.filter(p => p.city === sel);
   if (tourOnly) filtered = filtered.filter(p => p.type === 'Tour artista');
+  if (guessingOnly) filtered = filtered.filter(p => p.conf === 'Guessing');
+  if (searchTerm) {
+    filtered = filtered.filter(p =>
+      (p.name || '').toLowerCase().includes(searchTerm) ||
+      (p.city || '').toLowerCase().includes(searchTerm) ||
+      (p.note || '').toLowerCase().includes(searchTerm)
+    );
+  }
   if (filtered.length === 0) {
-    list.innerHTML = '<p style="color:#5a6a8a; font-size:14px;">// nessun profilo salvato. passa a "aggiungi" per crearne uno.</p>';
+    list.innerHTML = '<p style="color:#5a6a8a; font-size:14px;">// nessun profilo trovato con questi filtri.</p>';
     return;
   }
   list.innerHTML = filtered.map((p) => cardHtml(p, profiles.indexOf(p))).join('');
@@ -1088,7 +1128,7 @@ function switchTab(tab) {
   document.getElementById('tab-view').classList.toggle('active', tab === 'view');
   document.getElementById('tab-fest').classList.toggle('active', tab === 'fest');
   document.getElementById('tab-cn').classList.toggle('active', tab === 'cn');
-  document.getElementById('tab-add').classList.toggle('active', tab === 'add');
+  document.getElementById('tab-add-btn').classList.toggle('active', tab === 'add');
   document.getElementById('tab-nf').classList.toggle('active', tab === 'nf');
   document.getElementById('view-panel').style.display = tab === 'view' ? 'block' : 'none';
   document.getElementById('fest-panel').style.display = tab === 'fest' ? 'block' : 'none';
