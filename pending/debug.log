@@ -115,3 +115,105 @@ target=artisti-visual.csv | api_ok=False | risposta grezza: None
 --- run: chiave presente=True, lunghezza=53, modello=gemini-3.6-flash
 target=artisti-visual.csv | api_ok=True | risposta grezza: [{"name":"klsr.av","city":"","country":"","type":"Audiovisual art","handle":"@klsr.av","note":"Collaborating visual artist creating visual language interpreted from frequency and sound"}]
 --- run: chiave presente=True, lunghezza=53, modello=gemini-3.6-flash
+--- run: chiave presente=True, lunghezza=53, modello=gemini-3.6-flash
+target=artisti-visual.csv | api_ok=True | risposta grezza: [
+  {
+    "name": "tapas_changyang",
+    "city": "",
+    "country": "",
+    "kind": "artista",
+    "handle": "@tapas_changyang",
+    "note": "Profilo Instagram dell'artista"
+  },
+  {
+    "name": "Hajime Kutsuwada",
+    "city": "",
+    "country": "",
+    "kind": "artista",
+    "handle": "@hajime.kutsuwada",
+    "note": "Profilo Instagram dell'artista"
+  }
+]
+target=artisti-visual.csv | api_ok=True | risposta grezza: [{"name":"brokemypencils","city":"","country":"","kind":"artista","handle":"@brokemypencils","note":"Artista digitale / creatore"}]
+target=artisti-visual.csv | api_ok=True | risposta grezza: [
+  {
+    "name": "The Darkrooms Exhibition",
+    "city": "Berlin",
+    "country": "Germany",
+    "kind": "venue",
+    "handle": "thedarkroomsexhibition",
+    "note": "Spazio/organizzatore della mostra 'Veins' a Berlino"
+  },
+  {
+    "name": "Lumus Instruments",
+    "city": "",
+    "country": "",
+    "kind": "artista",
+    "handle": "lumus.instruments",
+    "note": "Artista/collettivo in mostra a 
+target=artisti-visual.csv | api_ok=True | risposta grezza: [{"name":"Mümün Keser","city":"Amsterdam","country":"Netherlands","kind":"artista","handle":"mmnksr","note":"Architectural designer e creatore di arte digitale e visuale ad ambientazione distopica e utopica"}]
+target=artisti-visual.csv | api_ok=True | risposta grezza: [{"name":"Mümün Keser","city":"Amsterdam","country":"Netherlands","kind":"artista","handle":"@mmnksr","note":"Architectural designer e digital artist con un focus su architettura distopica e utopica"}]
+target=artisti-visual.csv | api_ok=True | risposta grezza: [
+  {
+    "name": "The Darkroom Exhibition",
+    "city": "Berlin",
+    "country": "Germany",
+    "kind": "venue",
+    "handle": "@thedarkroomsexhibition",
+    "note": "Spazio espositivo e format di mostre d'arte mediale/installativa a Berlino"
+  },
+  {
+    "name": "Lumus Instruments",
+    "city": "",
+    "country": "",
+    "kind": "artista",
+    "handle": "@lumus.instruments",
+    "note": "Collett
+target=artisti-visual.csv | api_ok=True | risposta grezza: [
+  {
+    "name": "THE_SPACE Kudamm",
+    "city": "Berlin",
+    "country": "Germany",
+    "kind": "venue",
+    "handle": "@kudamm.space",
+    "note": "Spazio partecipante a Berlin New Media Week"
+  },
+  {
+    "name": "Prachtsaal Studio",
+    "city": "Berlin",
+    "country": "Germany",
+    "kind": "venue",
+    "handle": "@prachtsaal",
+    "note": "Studio e spazio culturale partecipante a Berlin New
+target=artisti-visual.csv | api_ok=True | risposta grezza: [
+  {
+    "name": "THILA Ground",
+    "city": "Seoul",
+    "country": "South Korea",
+    "kind": "venue",
+    "handle": "@thila.seoul",
+    "note": "Spazio indipendente a Seul (Mapo-gu) che ospita l'evento AI-SCAPE"
+  },
+  {
+    "name": "Alain Thibault",
+    "city": "",
+    "country": "",
+    "kind": "artista",
+    "handle": "@alain_thibault",
+    "note": "Artista audiovisivo e mediale in performa
+target=artisti-visual.csv | api_ok=True | risposta grezza: [
+  {
+    "name": "klsr.av",
+    "city": "",
+    "country": "",
+    "kind": "artista",
+    "handle": "@klsr.av",
+    "note": "Artista visivo che ha curato l'interpretazione visiva dell'esperienza Frequency"
+  },
+  {
+    "name": "B-Side",
+    "city": "Milano",
+    "country": "Italia",
+    "kind": "venue",
+    "handle": "@b.side.bar",
+    "note": "Cocktail bar e spazio esperienziale che presenta il 

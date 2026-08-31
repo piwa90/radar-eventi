@@ -46,3 +46,17 @@ https://www.instagram.com/hajime.kutsuwada?igsi=MWtncWtobjJzNXJ3cA=="]
 [eventi] count=0 ok=true raw_preview={"ok":true,"result":[]}
 [artisti] lunghezza token: 46
 [artisti] count=0 ok=true raw_preview={"ok":true,"result":[]}
+[eventi] lunghezza token: 46
+[eventi] count=0 ok=true raw_preview={"ok":true,"result":[]}
+[artisti] lunghezza token: 46
+[artisti] count=9 ok=true raw_preview={"ok":true,"result":[{"update_id":898298704,
+"message":{"message_id":16,"from":{"id":8779360785,"is_bot":false,"first_name":"bob","username":"weah619","language_code":"en"},"chat":{"id":8779360785,"fi
+[artisti] NEW_TEXT_LINES=["2026-08-31T10:56:01Z","#artista bob:
+https://www.instagram.com/tapas_changyang?igsi=MXh4aTRubW1qdWVzcw==
+
+https://www.instagram.com/hajime.kutsuwada?igsi=MWtncWtobjJzNXJ3cA=="
+"2026-08-31T10:56:01Z","#artista https://www.instagram.com/brokemypencils?igsi=MTU1a2lvZG03YjV1Yg=="]
+[artisti_music] lunghezza token: 46
+[artisti_music] count=0 ok=true raw_preview={"ok":true,"result":[]}
+[art_venues] lunghezza token: 46
+[art_venues] count=0 ok=true raw_preview={"ok":true,"result":[]}
