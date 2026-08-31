@@ -220,3 +220,22 @@ target=artisti-visual.csv | api_ok=True | risposta grezza: [
 --- run: chiave presente=True, lunghezza=53, modello=gemini-3.6-flash
 Errore Gemini: TimeoutError: The read operation timed out
 target=artisti-music.csv | api_ok=False | risposta grezza: None
+--- run: chiave presente=True, lunghezza=53, modello=gemini-3.6-flash
+target=artisti-music.csv | api_ok=True | risposta grezza: [
+  {
+    "name": "Nídia Valentina",
+    "city": "",
+    "country": "",
+    "kind": "artista",
+    "handle": "https://nidiavalentina.bandcamp.com",
+    "note": "Producer / DJ"
+  },
+  {
+    "name": "DJ Anderson do Paraíso",
+    "city": "",
+    "country": "",
+    "kind": "artista",
+    "handle": "",
+    "note": "Producer / DJ"
+  }
+]
