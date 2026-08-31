@@ -112,3 +112,5 @@ target=artisti-visual.csv | api_ok=True | risposta grezza: [
    
 Errore Gemini: TimeoutError: The read operation timed out
 target=artisti-visual.csv | api_ok=False | risposta grezza: None
+--- run: chiave presente=True, lunghezza=53, modello=gemini-3.6-flash
+target=artisti-visual.csv | api_ok=True | risposta grezza: [{"name":"klsr.av","city":"","country":"","type":"Audiovisual art","handle":"@klsr.av","note":"Collaborating visual artist creating visual language interpreted from frequency and sound"}]
