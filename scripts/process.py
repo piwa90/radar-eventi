@@ -25,6 +25,8 @@ SECTION_TAGS = {
     '#visual': 'artisti-visual.csv',
     '#artistamusic': 'artisti-music.csv',
     '#musicista': 'artisti-music.csv',
+    '#artvenue': 'art-venues.csv',
+    '#venue': 'art-venues.csv',
 }
 DEFAULT_TARGET = 'data.csv'
 
@@ -91,19 +93,51 @@ Rispondi SOLO con un array JSON, senza testo prima o dopo, senza markdown. Forma
 
 Se non trovi nulla di rilevante, rispondi: []"""
 
+PROMPT_ART_VENUES = """Sei un assistente che cataloga venue d'arte (gallerie, musei, project space, spazi indipendenti, biennali), E gli artisti quando compaiono nello stesso contenuto.
+
+Analizza il contenuto fornito ed estrai TUTTE le entita rilevanti.
+
+DISTINZIONE FONDAMENTALE - VENUE vs ARTISTA:
+Una venue (galleria, museo, spazio che espone) e un artista (persona o collettivo che crea l'opera) sono DUE COSE DIVERSE. Se il contenuto menziona entrambi insieme (es. "mostra di tal artista alla galleria X"), estrai SEMPRE due righe separate, mai una sola:
+- una riga per la venue/galleria/spazio, con kind "venue"
+- una riga per l'artista, con kind "artista"
+Se vedi solo la venue senza nessun artista associato, estrai solo la venue. Se vedi solo un artista senza nessuna venue associata, estrai solo l'artista.
+
+REGOLE FERREE:
+- Estrai SOLO handle Instagram o link a sito che vedi scritti esplicitamente nel testo o nell'immagine. NON inventare mai un handle basandoti sul nome.
+- Se non vedi un handle o link scritto, lascia il campo link vuoto.
+- Se non sei sicuro della citta della venue/artista, lascia vuoto invece di indovinare.
+- Se il testo non contiene nessuna entita riconoscibile (es. un saluto, un test, una frase generica), rispondi con array vuoto [].
+
+Rispondi SOLO con un array JSON, senza testo prima o dopo, senza markdown. Formato:
+[{"name":"...","city":"...","country":"...","kind":"venue|artista","handle":"...","note":"breve descrizione"}]
+
+Se non trovi nulla di rilevante, rispondi: []"""
+
 PROMPTS = {
     'data.csv': PROMPT_EVENTI,
     'artisti-visual.csv': PROMPT_ARTISTI,
     'artisti-music.csv': PROMPT_ARTISTI_MUSIC,
+    'art-venues.csv': PROMPT_ART_VENUES,
 }
 
-# Per i bot che estraggono sia artisti sia venue nello stesso content (campo "kind"):
-# gli artisti restano nel file target, le venue vengono smistate verso Eventi.
+# Configurazione generalizzata per lo smistamento artista/venue: ogni bot ha
+# un "kind" primario che resta nel proprio file, l'altro kind viene dirottato
+# verso il file di destinazione indicato in other_target.
 KIND_SPLIT_CONFIG = {
-    'artisti-visual.csv': {'artist_type': 'Digital art', 'venue_type': 'Arte'},
-    'artisti-music.csv': {'artist_type': 'Musica', 'venue_type': 'Musica'},
+    'artisti-visual.csv': {
+        'primary_kind': 'artista', 'primary_type': 'Digital art',
+        'other_target': 'data.csv', 'other_type': 'Arte'
+    },
+    'artisti-music.csv': {
+        'primary_kind': 'artista', 'primary_type': 'Musica',
+        'other_target': 'data.csv', 'other_type': 'Musica'
+    },
+    'art-venues.csv': {
+        'primary_kind': 'venue', 'primary_type': 'Arte',
+        'other_target': 'artisti-visual.csv', 'other_type': 'Digital art'
+    },
 }
-
 
 
 def log_debug(msg):
@@ -247,30 +281,34 @@ def main():
         print(f"  -> estratte {len(items)} entita ({target}) da: {text[:60]}")
         extracted_by_target.setdefault(target, []).extend(items)
 
-    # I bot Artisti restituiscono sia artisti sia venue (campo "kind"): le venue vanno
-    # smistate verso Eventi, solo gli artisti restano nel loro file
+    # Ogni bot con smistamento kind ha un tipo "primario" che resta nel proprio file
+    # e uno "secondario" che viene dirottato verso other_target
     for kind_target, cfg in KIND_SPLIT_CONFIG.items():
         if kind_target not in extracted_by_target:
             continue
         items_to_split = extracted_by_target.pop(kind_target)
-        only_artists = []
+        primary_items = []
         for item in items_to_split:
-            kind = (item.get('kind') or 'artista').strip().lower()
-            if kind == 'venue':
-                item['type'] = cfg['venue_type']
-                note = (item.get('note') or '').strip()
-                item['note'] = (note + f" [venue trovata tramite bot {kind_target.replace('.csv','')}]").strip()
-                extracted_by_target.setdefault('data.csv', []).append(item)
+            kind = (item.get('kind') or cfg['primary_kind']).strip().lower()
+            if kind == cfg['primary_kind']:
+                item['type'] = cfg['primary_type']
+                primary_items.append(item)
             else:
-                item['type'] = cfg['artist_type']
-                only_artists.append(item)
-        extracted_by_target[kind_target] = only_artists
+                item['type'] = cfg['other_type']
+                note = (item.get('note') or '').strip()
+                item['note'] = (note + f" [trovato tramite bot {kind_target.replace('.csv', '')}]").strip()
+                extracted_by_target.setdefault(cfg['other_target'], []).append(item)
+        extracted_by_target[kind_target] = primary_items
 
     # Scrivo le entita' estratte nei rispettivi file
     for target, extracted in extracted_by_target.items():
         existing_links = load_existing_links(target)
         new_rows = []
-        default_type = 'Digital art' if target == 'artisti-visual.csv' else 'Musica'
+        default_type = {
+            'artisti-visual.csv': 'Digital art',
+            'artisti-music.csv': 'Musica',
+            'art-venues.csv': 'Arte',
+        }.get(target, 'Musica')
 
         for item in extracted:
             name = (item.get('name') or '').strip()
