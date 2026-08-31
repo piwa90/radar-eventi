@@ -26,9 +26,15 @@ SECTION_TAGS = {
 }
 DEFAULT_TARGET = 'data.csv'
 
-PROMPT_EVENTI = """Sei un assistente che cataloga locali, club, festival, collettivi e spazi culturali legati a musica elettronica, arte e digital art.
+PROMPT_EVENTI = """Sei un assistente che cataloga locali, club, festival, collettivi, spazi culturali E artisti musicali in tour, legati a musica elettronica, arte e digital art.
 
-Analizza il contenuto fornito ed estrai TUTTE le entita rilevanti (locali, festival, collettivi, artisti in tour).
+Analizza il contenuto fornito ed estrai TUTTE le entita rilevanti.
+
+DISTINZIONE FONDAMENTALE - ARTISTA vs VENUE:
+Un artista (persona o collettivo che si esibisce/crea) e una venue (locale, festival, spazio fisico che ospita) sono DUE COSE DIVERSE. Se il contenuto menziona ENTRAMBI insieme (es. "tal DJ suona da tal club", una locandina con artista + venue), estrai SEMPRE due righe separate, mai una sola:
+- una riga per l'artista, con type "Tour artista"
+- una riga per la venue/il locale/il festival, con il suo type proprio (Musica/Arte/Digital art/Misto)
+Non mescolare mai le informazioni delle due entita in una singola riga.
 
 REGOLE FERREE:
 - Estrai SOLO handle Instagram che vedi scritti esplicitamente nel testo o nell'immagine. NON inventare mai un handle basandoti sul nome.
@@ -41,15 +47,18 @@ Rispondi SOLO con un array JSON, senza testo prima o dopo, senza markdown. Forma
 
 Se non trovi nulla di rilevante, rispondi: []"""
 
-PROMPT_ARTISTI = """Sei un assistente che cataloga artisti digital art, new media, generative art e audiovisivi.
+PROMPT_ARTISTI = """Sei un assistente che cataloga SOLO artisti/creatori digital art, new media, generative art e audiovisivi (persone o collettivi che producono opere) — non locali ne spazi che li ospitano.
 
 Analizza il contenuto fornito ed estrai TUTTI gli artisti/collettivi rilevanti.
+
+DISTINZIONE FONDAMENTALE - ARTISTA vs VENUE:
+Un artista visual/digital (persona o collettivo che crea l'opera) e una venue (galleria, museo, festival, spazio che la espone/ospita) sono DUE COSE DIVERSE. Se il contenuto menziona entrambi insieme (es. "installazione di tal artista alla galleria X"), estrai SOLO l'artista/creatore. NON estrarre la galleria/museo/festival/spazio come se fosse un artista, anche se compare nel testo o nell'immagine — quella informazione appartiene a un catalogo diverso, non a questo.
 
 REGOLE FERREE:
 - Estrai SOLO handle Instagram o link a portfolio/sito che vedi scritti esplicitamente nel testo o nell'immagine. NON inventare mai un handle basandoti sul nome.
 - Se non vedi un handle o link scritto, lascia il campo link vuoto.
 - Se non sei sicuro della citta o base dell'artista, lascia vuoto invece di indovinare.
-- Se il testo non contiene nessun artista riconoscibile (es. un saluto, un test, una frase generica), rispondi con array vuoto [].
+- Se il testo non contiene nessun artista riconoscibile (es. un saluto, un test, una frase generica, o solo il nome di una venue senza artisti associati), rispondi con array vuoto [].
 
 Rispondi SOLO con un array JSON, senza testo prima o dopo, senza markdown. Formato:
 [{"name":"...","city":"...","country":"...","type":"Digital art","handle":"...","note":"breve descrizione del medium/stile"}]
