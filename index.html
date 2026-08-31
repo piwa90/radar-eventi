@@ -771,7 +771,8 @@ async function switchSection(sec) {
   document.getElementById('sec-eventi').classList.toggle('active', sec === 'eventi');
   document.getElementById('sec-artisti').classList.toggle('active', sec === 'artisti');
   document.getElementById('tab-cn').style.display = sec === 'eventi' ? '' : 'none';
-  if (sec === 'artisti' && document.getElementById('tab-cn').classList.contains('active')) {
+  document.getElementById('tab-fest').style.display = sec === 'eventi' ? '' : 'none';
+  if (sec === 'artisti' && (document.getElementById('tab-cn').classList.contains('active') || document.getElementById('tab-fest').classList.contains('active'))) {
     switchTab('view');
   }
 
