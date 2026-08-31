@@ -126,9 +126,12 @@
   <h2 class="sr-only">Radar Eventi</h2>
   <p id="sync-status" style="font-size:11px; color:#5a6a8a; margin:-4px 0 10px;"></p>
 
-  <div style="display:flex; gap:6px; margin-bottom:10px;">
-    <div id="sec-eventi" class="radar-tab active" onclick="switchSection('eventi')" style="flex:1;">Eventi</div>
-    <div id="sec-artisti" class="radar-tab" onclick="switchSection('artisti')" style="flex:1;">Artisti Visual</div>
+  <div style="display:flex; gap:6px; margin-bottom:10px; overflow-x:auto;">
+    <div id="sec-eventi" class="radar-tab active" onclick="switchSection('eventi')" style="flex-shrink:0; white-space:nowrap; padding-left:14px; padding-right:14px;">Eventi</div>
+    <div id="sec-artisti-music" class="radar-tab" onclick="switchSection('artisti-music')" style="flex-shrink:0; white-space:nowrap; padding-left:14px; padding-right:14px;">Artisti Music</div>
+    <div id="sec-artisti" class="radar-tab" onclick="switchSection('artisti')" style="flex-shrink:0; white-space:nowrap; padding-left:14px; padding-right:14px;">Artisti Visual</div>
+    <div id="sec-art-venues" class="radar-tab" onclick="switchSection('art-venues')" style="flex-shrink:0; white-space:nowrap; padding-left:14px; padding-right:14px;">Art Venues</div>
+    <div id="sec-architettura" class="radar-tab" onclick="switchSection('architettura')" style="flex-shrink:0; white-space:nowrap; padding-left:14px; padding-right:14px;">Architettura</div>
   </div>
 
   <div style="display:flex; gap:8px; margin-bottom:14px; align-items:center;">
@@ -186,6 +189,11 @@
       <option value="Digital art">Digital art</option>
       <option value="Misto">Misto</option>
       <option value="Tour artista">Tour artista</option>
+      <option value="Galleria">Galleria</option>
+      <option value="Museo">Museo</option>
+      <option value="Project space">Project space</option>
+      <option value="Architetto">Architetto</option>
+      <option value="Studio di architettura">Studio di architettura</option>
     </select>
 
     <label>link instagram</label>
@@ -739,9 +747,13 @@ let linkEdits = {};
 
 // ==== SUPPORTO MULTI-SEZIONE ====
 let currentSection = 'eventi';
+const ALL_SECTIONS = ['eventi', 'artisti-music', 'artisti', 'art-venues', 'architettura'];
 const sectionState = {
   eventi: { seedProfiles: null, notFoundList: null, customProfiles: [], deletedSeedLinks: [], linkEdits: {}, profiles: [], remoteUrl: 'data.csv', loaded: false },
-  artisti: { seedProfiles: [], notFoundList: [], customProfiles: [], deletedSeedLinks: [], linkEdits: {}, profiles: [], remoteUrl: 'artisti-visual.csv', loaded: false }
+  artisti: { seedProfiles: [], notFoundList: [], customProfiles: [], deletedSeedLinks: [], linkEdits: {}, profiles: [], remoteUrl: 'artisti-visual.csv', loaded: false },
+  'artisti-music': { seedProfiles: [], notFoundList: [], customProfiles: [], deletedSeedLinks: [], linkEdits: {}, profiles: [], remoteUrl: 'artisti-music.csv', loaded: false },
+  'art-venues': { seedProfiles: [], notFoundList: [], customProfiles: [], deletedSeedLinks: [], linkEdits: {}, profiles: [], remoteUrl: 'art-venues.csv', loaded: false },
+  architettura: { seedProfiles: [], notFoundList: [], customProfiles: [], deletedSeedLinks: [], linkEdits: {}, profiles: [], remoteUrl: 'architettura.csv', loaded: false }
 };
 
 function saveCurrentToState() {
@@ -768,11 +780,12 @@ async function switchSection(sec) {
   if (sec === currentSection) return;
   saveCurrentToState();
   currentSection = sec;
-  document.getElementById('sec-eventi').classList.toggle('active', sec === 'eventi');
-  document.getElementById('sec-artisti').classList.toggle('active', sec === 'artisti');
+  ALL_SECTIONS.forEach(s => {
+    document.getElementById('sec-' + s).classList.toggle('active', s === sec);
+  });
   document.getElementById('tab-cn').style.display = sec === 'eventi' ? '' : 'none';
   document.getElementById('tab-fest').style.display = sec === 'eventi' ? '' : 'none';
-  if (sec === 'artisti' && (document.getElementById('tab-cn').classList.contains('active') || document.getElementById('tab-fest').classList.contains('active'))) {
+  if (sec !== 'eventi' && (document.getElementById('tab-cn').classList.contains('active') || document.getElementById('tab-fest').classList.contains('active'))) {
     switchTab('view');
   }
 
