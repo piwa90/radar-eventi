@@ -117,3 +117,17 @@ https://www.instagram.com/hajime.kutsuwada?igsi=MWtncWtobjJzNXJ3cA=="
 [artisti_music] count=0 ok=true raw_preview={"ok":true,"result":[]}
 [art_venues] lunghezza token: 46
 [art_venues] count=0 ok=true raw_preview={"ok":true,"result":[]}
+[eventi] lunghezza token: 46
+[eventi] count=2 ok=true raw_preview={"ok":true,"result":[{"update_id":230896408,
+"message":{"message_id":15,"from":{"id":8779360785,"is_bot":false,"first_name":"bob","username":"weah619","language_code":"en"},"chat":{"id":8779360785,"fi
+[eventi] NEW_TEXT_LINES=[]
+[eventi] NEW_TEXT_LINES vuoto
+[artisti] lunghezza token: 46
+[artisti] count=4 ok=true raw_preview={"ok":true,"result":[{"update_id":898298716,
+"message":{"message_id":28,"from":{"id":8779360785,"is_bot":false,"first_name":"bob","username":"weah619","language_code":"en"},"chat":{"id":8779360785,"fi
+[artisti] NEW_TEXT_LINES=[]
+[artisti] NEW_TEXT_LINES vuoto
+[artisti_music] lunghezza token: 46
+[artisti_music] count=0 ok=true raw_preview={"ok":true,"result":[]}
+[art_venues] lunghezza token: 46
+[art_venues] count=0 ok=true raw_preview={"ok":true,"result":[]}

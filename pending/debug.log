@@ -262,3 +262,67 @@ target=artisti-visual.csv | api_ok=True | risposta grezza: [
 target=artisti-visual.csv | api_ok=True | risposta grezza: [{"name":"by_nils","city":"","country":"","kind":"artista","handle":"@by_nils","note":"Artista digitale e visual designer specializzato in TouchDesigner e installazioni visuali"}]
 target=art-venues.csv | api_ok=True | risposta grezza: [{"name":"Kudamm Space","city":"Berlin","country":"Germania","kind":"venue","handle":"@kudamm.space","note":"Spazio d'arte e project space"}]
 --- run: chiave presente=True, lunghezza=53, modello=gemini-3.6-flash
+--- run: chiave presente=True, lunghezza=53, modello=gemini-3.6-flash
+target=data.csv | api_ok=True | risposta grezza: ```json
+[
+  {
+    "name": "Open Ground",
+    "city": "Wuppertal",
+    "country": "Germany",
+    "type": "Musica",
+    "handle": "openground.club",
+    "note": "Club di musica elettronica che ospita la serata Kapsela Records e 10 Years of Illusion"
+  },
+  {
+    "name": "Objekt",
+    "city": "",
+    "country": "",
+    "type": "Tour artista",
+    "handle": "objekttt",
+    "note": "DJ e produttore in 
+target=data.csv | api_ok=True | risposta grezza: [
+  {
+    "name": "TETE VIDE",
+    "city": "",
+    "country": "",
+    "type": "Musica",
+    "handle": "@tetevide.tv",
+    "note": "Collettivo e organizzatore di eventi di musica elettronica"
+  },
+  {
+    "name": "Bal Chavaux",
+    "city": "Montreuil",
+    "country": "Francia",
+    "type": "Musica",
+    "handle": "@bal_chavaux",
+    "note": "Locale e spazio culturale per eventi musicali"
+  },
+  {
+ 
+target=artisti-visual.csv | api_ok=True | risposta grezza: [
+  {
+    "name": "Rahul Sharma",
+    "city": "",
+    "country": "",
+    "kind": "artista",
+    "handle": "@raul_sharma94",
+    "note": "Artista spaziale, esperienziale, visuale e tech"
+  }
+]
+target=artisti-visual.csv | api_ok=True | risposta grezza: [
+  {
+    "name": "The Sixth Sense Festival",
+    "city": "",
+    "country": "India",
+    "kind": "venue",
+    "handle": "thesixthsense.in",
+    "note": "Festival multidisciplinare e immersivo in India"
+  },
+  {
+    "name": "Echoes of Earth Festival",
+    "city": "",
+    "country": "India",
+    "kind": "venue",
+    "handle": "echoesofearthfestival",
+    "note": "Festival creatore di The Sixth Sens
+target=artisti-visual.csv | api_ok=True | risposta grezza: [{"name":"vvirdev","city":"","country":"","kind":"artista","handle":"@vvirdev","note":"Artista digitale e creativo 3D specializzato in visual generativi, shader e grafica real-time"}]
