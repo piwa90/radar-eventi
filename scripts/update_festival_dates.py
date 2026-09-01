@@ -19,7 +19,12 @@ verra' ritentato al prossimo run settimanale.
 import os, csv, json, re, sys, time, urllib.request, urllib.error
 
 GEMINI_KEY = os.environ.get('GEMINI_API_KEY', '')
-MODEL = 'gemini-3.6-flash'
+# NOTA: sul piano gratuito, il grounding con Google Search per Gemini 3.x ha
+# quota giornaliera pari a ZERO (verificato dalla dashboard Rate Limits:
+# "Fondatezza della Ricerca" -> Gemini 3 = 0/0). Gemini 2.5 invece ha 1500
+# richieste/giorno gratuite per il grounding, quindi qui usiamo questo modello
+# anche se il resto del progetto (Telegram) usa gemini-3.6-flash.
+MODEL = 'gemini-2.5-flash'
 API_URL = f'https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent'
 
 DATA_FILE = 'data.csv'
@@ -117,18 +122,18 @@ def main():
         log(f"[{i}/{len(festivals)}] Cerco date per: {name} ({city})...")
         text, ok = call_gemini_with_search(name, city)
         if not ok:
-            time.sleep(4)
+            time.sleep(13)
             continue
         parsed = parse_response(text)
         if not parsed:
-            time.sleep(4)
+            time.sleep(13)
             continue
         new_note = update_note(row.get('note', ''), parsed.get('date', ''), parsed.get('confidence', 'Guessing'))
         if new_note != (row.get('note') or ''):
             row['note'] = new_note
             changed = True
             log(f"  -> aggiornato: {new_note}")
-        time.sleep(4)  # margine rispetto ai rate limit per-minuto dell'API
+        time.sleep(13)  # margine rispetto al limite di 5 RPM di gemini-2.5-flash sul piano gratuito
 
     if changed:
         with open(DATA_FILE, 'w', newline='', encoding='utf-8') as f:
