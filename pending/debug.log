@@ -326,3 +326,23 @@ target=artisti-visual.csv | api_ok=True | risposta grezza: [
     "handle": "echoesofearthfestival",
     "note": "Festival creatore di The Sixth Sens
 target=artisti-visual.csv | api_ok=True | risposta grezza: [{"name":"vvirdev","city":"","country":"","kind":"artista","handle":"@vvirdev","note":"Artista digitale e creativo 3D specializzato in visual generativi, shader e grafica real-time"}]
+--- run: chiave presente=True, lunghezza=53, modello=gemini-3.6-flash
+target=artisti-visual.csv | api_ok=True | risposta grezza: [
+  {
+    "name": "U-BOOT Lab",
+    "city": "Genova",
+    "country": "Italia",
+    "kind": "artista",
+    "handle": "uboot.lab",
+    "note": "Studio e collettivo di ricerca/progettazione, autore del progetto"
+  },
+  {
+    "name": "Simone Lezzi",
+    "city": "",
+    "country": "",
+    "kind": "artista",
+    "handle": "simonelezzi",
+    "note": "Co-autore/creativo del progetto"
+  },
+  {
+    "name": 
