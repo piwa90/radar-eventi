@@ -239,3 +239,5 @@ target=artisti-music.csv | api_ok=True | risposta grezza: [
     "note": "Producer / DJ"
   }
 ]
+--- run: chiave presente=True, lunghezza=53, modello=gemini-3.6-flash
+target=artisti-visual.csv | api_ok=True | risposta grezza: [{"name":"ilpleut.studio","city":"","country":"","kind":"artista","handle":"@ilpleut.studio","note":"Studio di arte digitale e visual media"}]
