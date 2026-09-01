@@ -242,3 +242,22 @@ target=artisti-music.csv | api_ok=True | risposta grezza: [
 --- run: chiave presente=True, lunghezza=53, modello=gemini-3.6-flash
 target=artisti-visual.csv | api_ok=True | risposta grezza: [{"name":"ilpleut.studio","city":"","country":"","kind":"artista","handle":"@ilpleut.studio","note":"Studio di arte digitale e visual media"}]
 --- run: chiave presente=True, lunghezza=53, modello=gemini-3.6-flash
+--- run: chiave presente=True, lunghezza=53, modello=gemini-3.6-flash
+target=artisti-visual.csv | api_ok=True | risposta grezza: [
+  {
+    "name": "Ryuichi Sakamoto",
+    "city": "",
+    "country": "Japan",
+    "kind": "artista",
+    "handle": "",
+    "note": "Compositore e musicista, co-autore dell'installazione 'async - immersion'"
+  },
+  {
+    "name": "Shiro Takatani",
+    "city": "Kyoto",
+    "country": "Japan",
+    "kind": "artista",
+    "handle": "",
+    "note": "Artista visivo e new media artist, co-autore dell'insta
+target=artisti-visual.csv | api_ok=True | risposta grezza: [{"name":"by_nils","city":"","country":"","kind":"artista","handle":"@by_nils","note":"Artista digitale e visual designer specializzato in TouchDesigner e installazioni visuali"}]
+target=art-venues.csv | api_ok=True | risposta grezza: [{"name":"Kudamm Space","city":"Berlin","country":"Germania","kind":"venue","handle":"@kudamm.space","note":"Spazio d'arte e project space"}]

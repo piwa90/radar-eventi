@@ -96,3 +96,16 @@ https://www.instagram.com/hajime.kutsuwada?igsi=MWtncWtobjJzNXJ3cA=="
 [artisti_music] count=0 ok=true raw_preview={"ok":true,"result":[]}
 [art_venues] lunghezza token: 46
 [art_venues] count=0 ok=true raw_preview={"ok":true,"result":[]}
+[eventi] lunghezza token: 46
+[eventi] count=0 ok=true raw_preview={"ok":true,"result":[]}
+[artisti] lunghezza token: 46
+[artisti] count=2 ok=true raw_preview={"ok":true,"result":[{"update_id":898298714,
+"message":{"message_id":26,"from":{"id":8779360785,"is_bot":false,"first_name":"bob","username":"weah619","language_code":"en"},"chat":{"id":8779360785,"fi
+[artisti] NEW_TEXT_LINES=[]
+[artisti] NEW_TEXT_LINES vuoto
+[artisti_music] lunghezza token: 46
+[artisti_music] count=0 ok=true raw_preview={"ok":true,"result":[]}
+[art_venues] lunghezza token: 46
+[art_venues] count=1 ok=true raw_preview={"ok":true,"result":[{"update_id":169720249,
+"message":{"message_id":2,"from":{"id":8779360785,"is_bot":false,"first_name":"bob","username":"weah619","language_code":"en"},"chat":{"id":8779360785,"fir
+[art_venues] NEW_TEXT_LINES=["2026-09-01T10:08:18Z","#artvenue https://www.instagram.com/kudamm.space?igsi=MWNta2d2bnB1ZTh1YQ=="]
