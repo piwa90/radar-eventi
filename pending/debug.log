@@ -346,3 +346,4 @@ target=artisti-visual.csv | api_ok=True | risposta grezza: [
   },
   {
     "name": 
+--- run: chiave presente=True, lunghezza=53, modello=gemini-3.6-flash
