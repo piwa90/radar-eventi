@@ -1,0 +1,33 @@
+name: Aggiorna date festival
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'   # ogni lunedi alle 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-dates:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cerca date festival con Gemini
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python3 scripts/update_festival_dates.py
+
+      - name: Commit changes if any
+        run: |
+          git config user.name "radar-bot"
+          git config user.email "radar-bot@users.noreply.github.com"
+          git add data.csv
+          if git diff --staged --quiet; then
+            echo "Nessuna modifica da salvare"
+          else
+            git commit -m "Aggiornamento automatico date festival"
+            git push
+          fi
