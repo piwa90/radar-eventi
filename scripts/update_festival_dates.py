@@ -19,12 +19,13 @@ verra' ritentato al prossimo run settimanale.
 import os, csv, json, re, sys, time, urllib.request, urllib.error
 
 GEMINI_KEY = os.environ.get('GEMINI_API_KEY', '')
-# NOTA: sul piano gratuito, il grounding con Google Search per Gemini 3.x ha
-# quota giornaliera pari a ZERO (verificato dalla dashboard Rate Limits:
-# "Fondatezza della Ricerca" -> Gemini 3 = 0/0). Gemini 2.5 invece ha 1500
-# richieste/giorno gratuite per il grounding, quindi qui usiamo questo modello
-# anche se il resto del progetto (Telegram) usa gemini-3.6-flash.
-MODEL = 'gemini-2.5-flash'
+# NOTA: gemini-2.5-flash non e' piu' disponibile per nuovi utenti (404).
+# Sul piano gratuito, il grounding con Google Search per Gemini 3.x standard
+# ha quota giornaliera pari a ZERO (dashboard Rate Limits: "Fondatezza della
+# Ricerca" -> Gemini 3 = 0/0). Tentativo: gemini-3.1-flash-lite, che ha limiti
+# di base piu' alti (500 RPD) e potrebbe rientrare nella categoria "Default"
+# della quota di ricerca (0/1.5K) invece che in quella azzerata di Gemini 3.
+MODEL = 'gemini-3.1-flash-lite'
 API_URL = f'https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent'
 
 DATA_FILE = 'data.csv'
