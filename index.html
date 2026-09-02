@@ -58,6 +58,10 @@
     border-bottom: 1px solid #1e2a4a;
     text-transform: uppercase; letter-spacing: 0.5px;
   }
+  .radar-city-subheader {
+    color: #8ab4ff; font-size: 12px; font-weight: bold;
+    margin: 10px 0 6px 8px;
+  }
   .radar-confirm-bar {
     display: flex; gap: 8px; margin-top: 8px;
     background: #2a0e14; border: 1px solid #ff5d5d;
@@ -1127,17 +1131,21 @@ function renderFestivals() {
   const groups = {};
   festivals.forEach(p => {
     const country = countryOf(p.city);
-    if (!groups[country]) groups[country] = [];
-    groups[country].push(p);
+    if (!groups[country]) groups[country] = {};
+    const city = p.city || '';
+    if (!groups[country][city]) groups[country][city] = [];
+    groups[country][city].push(p);
   });
   const countries = Object.keys(groups).sort();
   let html = '';
   countries.forEach(country => {
     html += `<div class="radar-country-header">${escapeHtml(country === '__tour__' ? 'TOUR' : country)}</div>`;
-    const sorted = groups[country].slice().sort((a, b) =>
-      a.city.localeCompare(b.city) || a.name.localeCompare(b.name));
-    sorted.forEach(p => {
-      html += cardHtml(p, profiles.indexOf(p));
+    const cities = Object.keys(groups[country]).sort();
+    cities.forEach(city => {
+      if (city) html += `<div class="radar-city-subheader">${escapeHtml(city)}</div>`;
+      groups[country][city].forEach(p => {
+        html += cardHtml(p, profiles.indexOf(p));
+      });
     });
   });
   el.innerHTML = html || '<p style="color:#5a6a8a; font-size:14px;">// nessun festival trovato.</p>';
