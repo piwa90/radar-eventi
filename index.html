@@ -1134,7 +1134,9 @@ function renderFestivals() {
   let html = '';
   countries.forEach(country => {
     html += `<div class="radar-country-header">${escapeHtml(country === '__tour__' ? 'TOUR' : country)}</div>`;
-    groups[country].forEach(p => {
+    const sorted = groups[country].slice().sort((a, b) =>
+      a.city.localeCompare(b.city) || a.name.localeCompare(b.name));
+    sorted.forEach(p => {
       html += cardHtml(p, profiles.indexOf(p));
     });
   });
