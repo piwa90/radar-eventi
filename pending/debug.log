@@ -3147,3 +3147,27 @@ Errore Gemini HTTP 429: {
 }
 
 target=artisti-visual.csv | api_ok=False | risposta grezza: None
+--- run: chiave presente=True, lunghezza=53, modello=gemini-3.6-flash
+Errore Gemini: TimeoutError: The read operation timed out
+target=data.csv | api_ok=False | risposta grezza: None
+target=data.csv | api_ok=True | risposta grezza: [
+  {
+    "name": "Myriam Bleau",
+    "city": "Montreal",
+    "country": "Canada",
+    "type": "Tour artista",
+    "handle": "myriam_bleau",
+    "note": "Tour autunnale dell'artista con vari show di musica elettronica e digital art (Unfold, Hypermobility, Soft Revolvers, Second Self, ecc.)"
+  },
+  {
+    "name": "Basemental",
+    "city": "",
+    "country": "",
+    "type": "Misto",
+    "handle": "ba
+target=data.csv | api_ok=True | risposta grezza: []
+target=artisti-visual.csv | api_ok=True | risposta grezza: []
+target=artisti-visual.csv | api_ok=True | risposta grezza: []
+target=art-venues.csv | api_ok=True | risposta grezza: []
+target=data.csv | api_ok=True | risposta grezza: []
+target=artisti-visual.csv | api_ok=True | risposta grezza: [{"name":"Holotrigger","city":"","country":"","kind":"artista","handle":"@holotrigger","note":"Progetto e creatore di arte digitale e audiovisiva"}]
