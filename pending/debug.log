@@ -3174,3 +3174,15 @@ target=artisti-visual.csv | api_ok=True | risposta grezza: [{"name":"Holotrigger
 --- run: chiave presente=True, lunghezza=53, modello=gemini-3.6-flash
 target=data.csv | api_ok=True | risposta grezza: []
 --- run: chiave presente=True, lunghezza=53, modello=gemini-3.6-flash
+--- run: chiave presente=True, lunghezza=53, modello=gemini-3.6-flash
+target=data.csv | api_ok=True | risposta grezza: [{"name":"La Fabriek","city":"Brussels","country":"Belgium","type":"Misto","handle":"lafabriekbrussels","note":"Spazio culturale e locale per eventi a Bruxelles"}]
+target=artisti-music.csv | api_ok=True | risposta grezza: [
+  {
+    "name": "DJ Travella",
+    "city": "",
+    "country": "",
+    "kind": "artista",
+    "handle": "@dj_travella_mr_mixondo",
+    "note": "Producer e DJ"
+  }
+]

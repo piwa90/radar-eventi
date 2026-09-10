@@ -697,3 +697,15 @@ https://www.instagram.com/hajime.kutsuwada?igsi=MWtncWtobjJzNXJ3cA=="
 [artisti_music] count=0 ok=true raw_preview={"ok":true,"result":[]}
 [art_venues] lunghezza token: 46
 [art_venues] count=0 ok=true raw_preview={"ok":true,"result":[]}
+[eventi] lunghezza token: 46
+[eventi] count=1 ok=true raw_preview={"ok":true,"result":[{"update_id":230896414,
+"message":{"message_id":21,"from":{"id":8779360785,"is_bot":false,"first_name":"bob","username":"weah619","language_code":"en"},"chat":{"id":8779360785,"fi
+[eventi] NEW_TEXT_LINES=["2026-09-10T21:50:38Z","https://www.instagram.com/lafabriekbrussels?stkn=MXBpZjNnN3lld29lZQ=="]
+[artisti] lunghezza token: 46
+[artisti] count=0 ok=true raw_preview={"ok":true,"result":[]}
+[artisti_music] lunghezza token: 46
+[artisti_music] count=1 ok=true raw_preview={"ok":true,"result":[{"update_id":297907791,
+"message":{"message_id":3,"from":{"id":8779360785,"is_bot":false,"first_name":"bob","username":"weah619","language_code":"en"},"chat":{"id":8779360785,"fir
+[artisti_music] NEW_TEXT_LINES=["2026-09-10T21:50:38Z","#artistamusic https://www.instagram.com/dj_travella_mr_mixondo?stkn=MTFoeTFsZnd3Y3FldA=="]
+[art_venues] lunghezza token: 46
+[art_venues] count=0 ok=true raw_preview={"ok":true,"result":[]}
