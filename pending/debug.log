@@ -3171,3 +3171,5 @@ target=artisti-visual.csv | api_ok=True | risposta grezza: []
 target=art-venues.csv | api_ok=True | risposta grezza: []
 target=data.csv | api_ok=True | risposta grezza: []
 target=artisti-visual.csv | api_ok=True | risposta grezza: [{"name":"Holotrigger","city":"","country":"","kind":"artista","handle":"@holotrigger","note":"Progetto e creatore di arte digitale e audiovisiva"}]
+--- run: chiave presente=True, lunghezza=53, modello=gemini-3.6-flash
+target=data.csv | api_ok=True | risposta grezza: []
