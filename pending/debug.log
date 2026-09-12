@@ -3195,3 +3195,4 @@ target=artisti-music.csv | api_ok=True | risposta grezza: [
 --- run: chiave presente=True, lunghezza=53, modello=gemini-3.6-flash
 --- run: chiave presente=True, lunghezza=53, modello=gemini-3.6-flash
 --- run: chiave presente=True, lunghezza=53, modello=gemini-3.6-flash
+--- run: chiave presente=True, lunghezza=53, modello=gemini-3.6-flash
