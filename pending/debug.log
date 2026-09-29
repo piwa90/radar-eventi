@@ -3308,3 +3308,14 @@ target=artisti-visual.csv | api_ok=True | risposta grezza: [{"name":"Past Studio
 --- run: chiave presente=True, lunghezza=53, modello=gemini-3.6-flash
 --- run: chiave presente=True, lunghezza=53, modello=gemini-3.6-flash
 --- run: chiave presente=True, lunghezza=53, modello=gemini-3.6-flash
+--- run: chiave presente=True, lunghezza=53, modello=gemini-3.6-flash
+target=artisti-visual.csv | api_ok=True | risposta grezza: [
+  {
+    "name": "VAEG Collective",
+    "city": "",
+    "country": "",
+    "kind": "artista",
+    "handle": "@vaeg_collective",
+    "note": "Collettivo artistico"
+  }
+]
